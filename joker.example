@@ -1,6 +1,6 @@
-filemanager=rox
+filemanager=thunar
 stdaction=xterm -e ed
-browser=linksc -g
+browser=links -g
 
 ext=pdf
 command=zathura -P %line 
