@@ -5,8 +5,7 @@ Automatic application launcher inspired by Plan9 Plumber
 By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
 
 
-* 
-I wrote this to be used in text editors, such as ed, vim, etc.  Then you can do:<br />
+* I wrote this to be used in text editors, such as ed, vim, etc.  Then you can do:<br />
 10w !joker
 
 to execute a custom action based on the line.
