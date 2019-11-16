@@ -12,7 +12,7 @@ By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
 * The configuration file is ~/.joker
 
 
-* You can have in ~/.joker, for example:<br />
+You can have in ~/.joker, for example:<br />
 ext=pdf<br />
 command=zathura -P %line
 
