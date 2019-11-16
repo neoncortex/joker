@@ -6,9 +6,7 @@ By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
 
 
 * I wrote this to be used in text editors, such as ed, vim, etc.  Then you can do:<br />
-10w !joker
-
-to execute a custom action based on the line.
+10w !joker, to execute a custom action based on the line 10.
 
 
 * The configuration file is ~/.joker
