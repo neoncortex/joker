@@ -29,6 +29,7 @@ Limitations:
 * %line can't be used as part of commands since it's used by the program as a placeholder for the line number passed as :num.
 * It needs a whitespece after %line.
 * When passing a file path as input, it needs to end in /.
+* The shell needs to have LANG set.
 
 
 See joker.example.
