@@ -21,7 +21,7 @@ command=zathura -P %line
 then, if you invoke the program as:<br />
 echo /path/to/file.pdf:10 | joker
 
-it will open the /path/to/file.pdf on line 10.
+it will open the /path/to/file.pdf on line 10, inside the zathura document reader.
 
 
 Limitations:
