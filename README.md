@@ -30,6 +30,7 @@ Limitations:
 * It needs a whitespece after %line.
 * When passing a file path as input, it needs to end in /.
 * The shell needs to have LANG set.
+* The regex flavour is POSIX, to avoid dependencies.
 
 
 See joker.example.
