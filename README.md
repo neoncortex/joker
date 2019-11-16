@@ -19,7 +19,7 @@ ext=pdf<br />
 command=zathura -P %line
 
 then, if you invoke the program as:<br />
-echo /path/to/file.pdf:10
+echo /path/to/file.pdf:10 | joker
 
 it will open the /path/to/file.pdf on line 10.
 
