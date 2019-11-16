@@ -34,5 +34,5 @@ Limitations:
 
 See joker.example.
 
-* It does not have any dependencies, but it uses regex.h, which I presume all unices have.
+* It does not have any dependencies.
 * Tested on gcc 8.3.0, ARM.
