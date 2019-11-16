@@ -1,0 +1,54 @@
+filemanager=rox
+stdaction=xterm -e ed
+browser=linksc -g
+
+ext=pdf
+command=zathura -P %line 
+
+ext=djvu
+command=zathura -P %line 
+
+ext=epub
+command=mupdf
+
+ext=ps
+command=zathura -P %line 
+
+ext=txt
+command=xterm -e ed
+
+ext=jpg
+command=ristretto
+
+ext=png
+command=ristretto
+
+ext=gif
+command=ristretto
+
+ext=wemb
+command=vlc
+
+ext=mp4
+command=vlc
+
+ext=mp3
+command=audacious
+
+ext=wav
+command=audacious
+
+ext=kdbx
+command=keepassx
+
+ext=c
+command=xterm -e vim +%line 
+
+url=http://www.google.com/
+command=midori
+
+domain=youtube.com
+commandl=xterm -e youtube-dl
+
+regex="*.tiff"
+command=ristretto
