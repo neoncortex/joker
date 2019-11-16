@@ -5,7 +5,7 @@ This program receive a string as input via stdin and does something based on pat
 By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
 
 
-I wrote this to be used in text editors, such as ed, vim, etc.  Then you can do:
+I wrote this to be used in text editors, such as ed, vim, etc.  Then you can do:<br />
 10w !joker
 
 to execute a custom action based on the line.
@@ -14,11 +14,11 @@ to execute a custom action based on the line.
 The configuration file is ~/.joker
 
 
-You can have in ~/.joker, for example:
-ext=pdf
+You can have in ~/.joker, for example:<br />
+ext=pdf<br />
 command=zathura -P %line
 
-then, if you invoke the program as:
+then, if you invoke the program as:<br />
 echo /path/to/file.pdf:10
 
 it will open the /path/to/file.pdf on line 10.
