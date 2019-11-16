@@ -25,7 +25,7 @@ it will open the /path/to/file.pdf on line 10, inside the zathura document reade
 * It uses the POSIX regular expressions in Extended mode.
 
 
-Limitations and gotcha's:
+Limitations:
 * When passing a url as input, it needs to end in / for the domain matching.
 * %line can't be used as part of commands since it's used by the program as a placeholder for the line number passed as :num.
 * It needs a whitespece after %line.
