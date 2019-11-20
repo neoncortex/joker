@@ -1,54 +1,67 @@
-filemanager=thunar
-stdaction=xterm -e ed
-browser=links -g
+# filemanager to use when receive a path
+filemanager=thunar %arg
 
+# standard action/fallback
+stdaction=xterm -e ed %arg
+
+# web browser
+browser=links -g %arg
+
+
+# extensions
 ext=pdf
-command=zathura -P %line 
+command=zathura -P %line %arg
 
 ext=djvu
-command=zathura -P %line 
+command=zathura -P %line %arg
 
 ext=epub
-command=mupdf
+command=mupdf %arg
 
 ext=ps
-command=zathura -P %line 
+command=zathura -P %line %arg
 
 ext=txt
-command=xterm -e ed
+command=xterm -e ed %arg
 
 ext=jpg
-command=ristretto
+command=ristretto %arg
 
 ext=png
-command=ristretto
+command=ristretto %arg
 
 ext=gif
-command=ristretto
+command=ristretto %arg
 
 ext=wemb
-command=vlc
+command=vlc %arg
 
 ext=mp4
-command=vlc
+command=vlc %arg
 
 ext=mp3
-command=audacious
+command=audacious %arg
 
 ext=wav
-command=audacious
+command=audacious %arg
 
 ext=kdbx
-command=keepassx
+command=keepassx %arg
 
 ext=c
-command=xterm -e vim +%line 
+command=xterm -e vim +%line %arg
 
+
+# links
 url=http://www.google.com/
-command=midori
+command=midori %arg
 
+
+# domains
 domain=youtube.com
-commandl=xterm -e youtube-dl
+command=xterm -e youtube-dl %arg
 
+
+# regex
 regex="*.tiff"
-command=ristretto
+command=ristretto %arg

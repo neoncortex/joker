@@ -5,8 +5,12 @@ Automatic application launcher inspired by Plan9 Plumber
 By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
 
 
-* I wrote this to be used in text editors, such as ed, vim, etc.  Then you can do:<br />
-10w !joker, to execute a custom action based on the line 10.
+* I wrote this to be used in text editors, such as ed, vim, etc.  The idea is to launch
+an program or cause something to happen based on the contents of a given line, like
+in Acme editor.  You can, for example in vim, do:<br />
+:10w !joker, to execute a custom action based on the line 10.  You can set a keybind
+to make it easier and faster: map <F2> :.w !joker<CR>.  Now you just need to press
+F2 to execute it.
 
 
 * The configuration file is ~/.joker
@@ -14,7 +18,7 @@ By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
 
 You can have in ~/.joker, for example:<br />
 ext=pdf<br />
-command=zathura -P %line
+command=zathura -P %line %arg
 
 then, if you invoke the program as:<br />
 echo /path/to/file.pdf:10 | joker
@@ -24,14 +28,20 @@ it will open the /path/to/file.pdf on line 10, inside the zathura document reade
 
 * It uses the POSIX regular expressions in Extended mode.
 
+* The order of evaluation is: regex, url, domains, filenames, paths, extensions.  It
+means that if you have a url and a regex that both matches the input given, the regex
+will be executed, and so on.
 
-Limitations:
+
+Requirements and limitations:
 * When passing a url as input, it needs to end in / for the domain matching.
-* %line can't be used as part of commands since it's used by the program as a placeholder for the line number passed as :num.
-* It needs a whitespece after %line.
+* %line and %arg can't be used as part of commands since they are used as placeholders
+for line number and input.
 * When passing a file path as input, it needs to end in /.
 * The shell needs to have LANG set.
 
+
+* Configuration file:
 See joker.example.
 
 * It does not have any dependencies.

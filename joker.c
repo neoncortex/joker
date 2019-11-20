@@ -235,6 +235,7 @@ evaluate(wchar_t *arg)
 	int freearg = 0;
 	wchar_t *linenum = NULL;
 	wchar_t *command = NULL;
+	wchar_t *cmd = NULL;
 	for(i = asize; i > 0; --i) {
 		if(arg[i] == L':') {
 			j = asize - i;
@@ -418,6 +419,52 @@ evaluate(wchar_t *arg)
 	csize = wcslen(command);
 	for(i = 0; i < csize; ++i) {
 		if((command[i] == L'%')
+		&& (i + 3 <= csize)
+		&& (command[i + 1] == L'a')
+		&& (command[i + 2] == L'r')
+		&& (command[i + 3] == L'g')) {
+			wchar_t *head = malloc((i + 2)
+				* sizeof(wchar_t));
+			if(head == NULL)
+				break;
+
+			for(j = 0; j < i; ++j)
+				head[j] = command[j];
+
+			head[i] = L'\0';
+			wchar_t *tail = malloc(csize
+				* sizeof(wchar_t));
+			if(tail == NULL)
+				break;
+
+			k = 0;
+			for(j = i + 4; j < csize; ++j) {
+				tail[k] = command[j];
+				k++;
+			}
+
+			tail[k] = L'\0';
+			size = wcslen(head)
+				+ wcslen(arg)
+				+ wcslen(tail)
+				+ 3;
+			wchar_t *cmd = malloc(size * sizeof(wchar_t));
+			if(cmd == NULL)
+				break;
+
+			swprintf(cmd, size, L"%ls'%ls'%ls"
+				,head
+				,arg
+				,tail);
+			command = cmd;
+			free(head);
+			free(tail);
+		}
+	}
+
+	csize = wcslen(command);
+	for(i = 0; i < csize; ++i) {
+		if((command[i] == L'%')
 		&& (i + 4 <= csize)
 		&& (command[i + 1] == L'l')
 		&& (command[i + 2] == L'i')
@@ -446,53 +493,34 @@ evaluate(wchar_t *arg)
 			size = wcslen(head)
 				+ wcslen(linenum)
 				+ wcslen(tail)
-				+ wcslen(arg)
-				+ 4;
+				+ 1;
 			wchar_t *commandc = malloc(size
 				* sizeof(wchar_t));
 			if(commandc == NULL)
 				break;
 
-			swprintf(commandc, size, L"%ls%ls%ls '%ls'"
+			swprintf(commandc, size, L"%ls%ls%ls"
 				,head
 				,linenum
-				,tail
-				,arg);
-			char *scommand = malloc(size
-				* sizeof(char));
-			if(scommand == NULL)
-				break;
-
-			wcstombs(scommand, commandc, size);
-			system(scommand);
+				,tail);
+			free(cmd);
+			cmd = commandc;
+			command = cmd;
 			free(head);
 			free(tail);
-			free(commandc);
-			free(scommand);
-			if(freearg == 1)
-				free(arg);
-
-			return;
 		}
 	}
 
-	size = wcslen(command)
-		+ asize
-		+ 4;
-	wchar_t *commandc = malloc(size * sizeof(wchar_t));
-	if(commandc == NULL)
-		return;
-
-	swprintf(commandc, size, L"%ls '%ls'", command, arg);
-	char *scommand = malloc(size * sizeof(char));
+	char *scommand = malloc((wcslen(command) + 1)
+		* sizeof(char));
 	if(scommand == NULL)
 		return;
 
-	wcstombs(scommand, commandc, size);
+	wcstombs(scommand, command, (wcslen(command) + 1));
 	system(scommand);
 	free(scommand);
-	free(commandc);
 	free(linenum);
+	free(cmd);
 	if(freearg == 1)
 		free(arg);
 }
