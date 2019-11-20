@@ -45,5 +45,7 @@ Configuration file:
 * See joker.example.
 
 
+Build:
+* Just run make.
 * It does not have any dependencies.
 * Tested on gcc 8.3.0, ARM.
