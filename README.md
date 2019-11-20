@@ -41,8 +41,9 @@ for line number and input.
 * The shell needs to have LANG set.
 
 
-* Configuration file:
-See joker.example.
+Configuration file:
+* See joker.example.
+
 
 * It does not have any dependencies.
 * Tested on gcc 8.3.0, ARM.
