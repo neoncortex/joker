@@ -7,19 +7,22 @@ stdaction=xterm -e ed %arg
 # web browser
 browser=links -g %arg
 
+# manpages
+manpage = xterm -e "man %sec %arg | less +%numG"
+
 
 # extensions
 ext=pdf
-command=zathura -P %line %arg
+command=zathura -P %num %arg
 
 ext=djvu
-command=zathura -P %line %arg
+command=zathura -P %num %arg
 
 ext=epub
 command=mupdf %arg
 
 ext=ps
-command=zathura -P %line %arg
+command=zathura -P %num %arg
 
 ext=txt
 command=xterm -e ed %arg
@@ -49,7 +52,7 @@ ext=kdbx
 command=keepassx %arg
 
 ext=c
-command=xterm -e vim +%line %arg
+command=xterm -e vim +%num %arg
 
 
 # links

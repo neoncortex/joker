@@ -18,7 +18,7 @@ F2 to execute it.
 
 You can have in ~/.joker, for example:<br />
 ext=pdf<br />
-command=zathura -P %line %arg
+command=zathura -P %num %arg
 
 then, if you invoke the program as:<br />
 echo /path/to/file.pdf:10 | joker
@@ -35,8 +35,8 @@ will be executed, and so on.
 
 Requirements and limitations:
 * When passing a url as input, it needs to end in / for the domain matching.
-* %line and %arg can't be used as part of commands since they are used as placeholders
-for line number and input.
+* %num, %sec and %arg can't be used as part of commands since they are used as placeholders
+for line number, manual section and user input.
 * When passing a file path as input, it needs to end in /.
 * The shell needs to have LANG set.
 

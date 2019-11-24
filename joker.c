@@ -14,7 +14,7 @@ struct data {
 
 struct data **fext, **links, **domain, **filename, **regex;
 int fexts, linkss, domains, filenames, regexs;
-wchar_t *filemanager, *stdaction, *browser, *arg;
+wchar_t *filemanager, *stdaction, *browser, *manpage, *arg;
 
 struct data**
 adddata(struct data **da, wchar_t *tail, int *size)
@@ -163,6 +163,11 @@ readconfig(char *file)
 			addflag = 0;
 		}
 
+		if(wcscmp(h, L"manpage") == 0) {
+			manpage = setcomm(t);
+			addflag = 0;
+		}
+
 		if(wcscmp(h, L"command") == 0) {
 			struct data *d = NULL;
 			if(addflag == 1)
@@ -225,11 +230,64 @@ extmatch(wchar_t *arg, wchar_t *ext)
 	return 1;
 }
 
+wchar_t*
+replace(wchar_t *str, wchar_t *placeholder, wchar_t *data, wchar_t *format
+	,int extrasize)
+{
+	int i, j, k, size;
+	int csize = wcslen(str);
+	for(i = 0; i < csize; ++i) {
+		if((str[i] == L'%')
+		&& (i + 3 <= csize)
+		&& (str[i + 1] == placeholder[0])
+		&& (str[i + 2] == placeholder[1])
+		&& (str[i + 3] == placeholder[2])) {
+			wchar_t *head = malloc((i + 2) * sizeof(wchar_t));
+			if(head == NULL)
+				break;
+
+			for(j = 0; j < i; ++j)
+				head[j] = str[j];
+
+			head[i] = L'\0';
+			wchar_t *tail = malloc(csize
+				* sizeof(wchar_t));
+			if(tail == NULL)
+				break;
+
+			k = 0;
+			for(j = i + 4; j < csize; ++j) {
+				tail[k] = str[j];
+				k++;
+			}
+
+			tail[k] = L'\0';
+			size = wcslen(head)
+				+ wcslen(data)
+				+ wcslen(tail)
+				+ extrasize;
+			wchar_t *cmd = malloc(size
+				* sizeof(wchar_t));
+			if(cmd == NULL)
+				break;
+
+			swprintf(cmd, size, format
+				,head
+				,data
+				,tail);
+			free(head);
+			free(tail);
+			return cmd;
+		}
+	}
+
+	return NULL;
+}
+
 void
 evaluate(wchar_t *arg)
 {
 	int i, j, k;
-	int size = 0;
 	int asize = wcslen(arg);
 	int csize;
 	int freearg = 0;
@@ -248,7 +306,8 @@ evaluate(wchar_t *arg)
 
 			linenum[wcslen(linenum) - 1] = L'\0';
 			csize = asize - wcslen(linenum);
-			wchar_t *carg = malloc((csize + 1) * sizeof(wchar_t));
+			wchar_t *carg = malloc((csize + 1)
+				* sizeof(wchar_t));
 			if(carg == NULL)
 				break;
 
@@ -282,7 +341,8 @@ evaluate(wchar_t *arg)
 		if(d == NULL)
 			break;
 
-		char *pattern = malloc((wcslen(d->desc) + 1) * sizeof(char));
+		char *pattern = malloc((wcslen(d->desc) + 1)
+				* sizeof(char));
 		if(pattern == NULL)
 			break;
 
@@ -411,106 +471,64 @@ evaluate(wchar_t *arg)
 		command = stdaction;
 	}
 
+	if((arg[asize - 4] == L'(')
+	&& (arg[asize - 2] == L')')) {
+		wchar_t *sec = malloc(2 * sizeof(wchar_t));
+		if(sec == NULL)
+			return;
+
+		sec[0] = arg[asize - 3];
+		sec[1] = L'\0';
+		command = manpage;
+		wchar_t *tmp = replace(command, L"sec", sec, L"%ls%ls%ls"
+			,1);
+		if(tmp != NULL) {
+			free(cmd);
+			cmd = tmp;
+			command = cmd;
+		}
+
+		wchar_t *newarg = malloc(asize * sizeof(wchar_t));
+		if(newarg == NULL)
+			return;
+
+		for(i = 0;; ++i) {
+			if(arg[i] == L'(') {
+				newarg[i + 1] = L'\0';
+				break;
+			}
+
+			newarg[i] = arg[i];
+		}
+
+		if(freearg == 1)
+			free(arg);
+
+		free(sec);
+		arg = newarg;
+	}
+	
 	if(command == NULL)
 		return;
 
 	evaluation:
 	arg[wcslen(arg) - 1] = L'\0';
-	csize = wcslen(command);
-	for(i = 0; i < csize; ++i) {
-		if((command[i] == L'%')
-		&& (i + 3 <= csize)
-		&& (command[i + 1] == L'a')
-		&& (command[i + 2] == L'r')
-		&& (command[i + 3] == L'g')) {
-			wchar_t *head = malloc((i + 2)
-				* sizeof(wchar_t));
-			if(head == NULL)
-				break;
-
-			for(j = 0; j < i; ++j)
-				head[j] = command[j];
-
-			head[i] = L'\0';
-			wchar_t *tail = malloc(csize
-				* sizeof(wchar_t));
-			if(tail == NULL)
-				break;
-
-			k = 0;
-			for(j = i + 4; j < csize; ++j) {
-				tail[k] = command[j];
-				k++;
-			}
-
-			tail[k] = L'\0';
-			size = wcslen(head)
-				+ wcslen(arg)
-				+ wcslen(tail)
-				+ 3;
-			wchar_t *cmd = malloc(size * sizeof(wchar_t));
-			if(cmd == NULL)
-				break;
-
-			swprintf(cmd, size, L"%ls'%ls'%ls"
-				,head
-				,arg
-				,tail);
-			command = cmd;
-			free(head);
-			free(tail);
-		}
+	wchar_t *tmp = NULL;
+	tmp = replace(command, L"num", linenum, L"%ls%ls%ls", 2);
+	if(tmp != NULL) {
+		free(cmd);
+		cmd = tmp;
+		command = cmd;
 	}
 
-	csize = wcslen(command);
-	for(i = 0; i < csize; ++i) {
-		if((command[i] == L'%')
-		&& (i + 4 <= csize)
-		&& (command[i + 1] == L'l')
-		&& (command[i + 2] == L'i')
-		&& (command[i + 3] == L'n')
-		&& (command[i + 4] == L'e')) {
-			wchar_t *head = malloc((i + 2) * sizeof(wchar_t));
-			if(head == NULL)
-				break;
-
-			for(j = 0; j < i; ++j)
-				head[j] = command[j];
-
-			head[i] = L'\0';
-			wchar_t *tail = malloc(csize
-				* sizeof(wchar_t));
-			if(tail == NULL)
-				break;
-
-			k = 0;
-			for(j = i + 5; j < csize; ++j) {
-				tail[k] = command[j];
-				k++;
-			}
-
-			tail[k] = L'\0';
-			size = wcslen(head)
-				+ wcslen(linenum)
-				+ wcslen(tail)
-				+ 1;
-			wchar_t *commandc = malloc(size
-				* sizeof(wchar_t));
-			if(commandc == NULL)
-				break;
-
-			swprintf(commandc, size, L"%ls%ls%ls"
-				,head
-				,linenum
-				,tail);
-			free(cmd);
-			cmd = commandc;
-			command = cmd;
-			free(head);
-			free(tail);
-		}
+	tmp = replace(command, L"arg", arg, L"%ls'%ls'%ls", 3);
+	if(tmp != NULL) {
+		free(cmd);
+		cmd = tmp;
+		command = cmd;
 	}
 
+	wprintf(L"%ls", command);
 	char *scommand = malloc((wcslen(command) + 1)
 		* sizeof(char));
 	if(scommand == NULL)
@@ -597,6 +615,7 @@ main(int argc, char **argv)
 		filemanager = NULL;
 		stdaction = NULL;
 		browser = NULL;
+		manpage = NULL;
 		pid = fork();
 		if(pid == 0) {
 			if(readconfig(path) == 0)
@@ -617,6 +636,7 @@ main(int argc, char **argv)
 		free(filemanager);
 		free(stdaction);
 		free(browser);
+		free(manpage);
 	}
 
 	free(arg);
