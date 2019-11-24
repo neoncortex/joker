@@ -528,7 +528,6 @@ evaluate(wchar_t *arg)
 		command = cmd;
 	}
 
-	wprintf(L"%ls", command);
 	char *scommand = malloc((wcslen(command) + 1)
 		* sizeof(char));
 	if(scommand == NULL)
