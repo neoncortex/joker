@@ -37,10 +37,10 @@ ext=gif
 command=ristretto %arg
 
 ext=wemb
-command=vlc %arg
+command=vlc --start-time %num file://%arg
 
 ext=mp4
-command=vlc %arg
+command=vlc --start-time %num file://%arg
 
 ext=mp3
 command=audacious %arg
