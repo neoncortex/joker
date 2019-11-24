@@ -41,8 +41,11 @@ for line number, manual section and user input.
 * The shell needs to have LANG set.
 
 
-* Configuration file:
-See joker.example.
+Configuration file:
+* See joker.example.
 
+
+Build:
+* Just run make.
 * It does not have any dependencies.
 * Tested on gcc 8.3.0, ARM.
