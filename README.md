@@ -46,6 +46,9 @@ Configuration file:
 
 
 Build:
-* Just run make.
+* make.
+
+
+And:
 * It does not have any dependencies.
 * Tested on gcc 8.3.0, ARM.
