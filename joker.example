@@ -61,7 +61,7 @@ command=midori %arg
 
 
 # domains
-domain=youtube.com
+domain=www.youtube.com
 command=xterm -e youtube-dl %arg
 
 

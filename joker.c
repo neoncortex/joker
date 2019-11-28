@@ -197,6 +197,9 @@ readconfig(char *file)
 				return -1;
 		}
 
+		if(line != NULL)
+			free(line);
+
 		fclose(fd);
 		return 0;
 	}
@@ -211,11 +214,12 @@ readconfig(char *file)
 		int esize = wcslen(ext);
 		int asize = wcslen(arg);
 		for(i = 0; esize > 0; ++i) {
+			if((i == esize - 1)
+			&& (arg[asize - i - 2] == L'.'))
+				break;
+
 			if(arg[asize - i - 1] != ext[esize - i - 1])
 				return 0;
-
-			if(i == esize - 1)
-				break;
 		}
 
 		return 1;
