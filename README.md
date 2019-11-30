@@ -6,11 +6,25 @@ By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
 
 
 * I wrote this to be used in text editors, such as ed, vim, etc.  The idea is to launch
-an program or cause something to happen based on the contents of a given line, like
-in Acme editor.  You can, for example in vim, do:<br />
-:10w !joker, to execute a custom action based on the line 10.  You can set a keybind
-to make it easier and faster: map <F2> :.w !joker<CR>.  Now you just need to press
-F2 to execute it.
+an program or cause something to happen based on the contents of a given string, like
+in Acme.  It's useful to bookmark things:
+* /path/to/file.pdf:10  # page 10 of a pdf file.
+* printf(3):30  # line 30 of the section 3 printf manpage.
+* <stdio.h>:25  # line 25 of the C header stdio.h.
+* /path/to/file.mp4:60  # video file, which will start at second 60
+
+
+For nvim, I added to the init.vim:<br />
+map <F2> :.w !joker<CR><br />
+vmap <F2> "1y:!echo '<C-R>1'\|joker<CR><br />
+
+
+I suppose it will be the same for vim.  After that, you use F2 key to invoke joker.
+  If F2 is pressed on command mode, it sends the current line content to joker.
+  It's useful if your document is formatted for these use in mind and the line have
+a meaningful content for joker.  If you press F2 in visual mode, it sends the actual
+selection to joker.  It will use register 1 of the (n)vim editor, so any data there
+will be erased.
 
 
 * The configuration file is ~/.joker
@@ -21,14 +35,15 @@ ext=pdf<br />
 command=zathura -P %num %arg
 
 then, if you invoke the program as:<br />
-echo /path/to/file.pdf:10 | joker
+echo /path/to/file.pdf:10 | joker<br />
+or press F2 when a line/selection contains the /path/to/pdf:10
 
 it will open the /path/to/file.pdf on line 10, inside the zathura document reader.
 
 
 * It uses the POSIX regular expressions in Extended mode.
 
-* The order of evaluation is: regex, url, domains, filenames, paths, extensions.  It
+* The order of evaluation is: regex, url, domains, filenames, paths, extensions, manpages.  It
 means that if you have a url and a regex that both matches the input given, the regex
 will be executed, and so on.
 
@@ -38,6 +53,9 @@ Requirements and limitations:
 * %num, %sec and %arg can't be used as part of commands since they are used as placeholders
 for line number, manual section and user input.
 * When passing a file path as input, it needs to end in /.
+* Relative path's must start with ./
+* If it receives a "string" like that, it will be interpreted as a relative path, will
+be appended ./ and dealt with as a file.
 * The shell needs to have LANG set.
 
 
