@@ -8,8 +8,10 @@ stdaction=xterm -e ed %arg
 browser=links -g %arg
 
 # manpages
-manpage = xterm -e "man %sec %arg | less +%numG"
+manpage=xterm -e "man %sec %arg | less +%numG"
 
+# additional C header directory
+# idir=/usr/local/include/
 
 # extensions
 ext=pdf
@@ -42,12 +44,6 @@ command=vlc --start-time %num file://%arg
 ext=mp4
 command=vlc --start-time %num file://%arg
 
-ext=mp3
-command=audacious %arg
-
-ext=wav
-command=audacious %arg
-
 ext=kdbx
 command=keepassx %arg
 
@@ -66,5 +62,6 @@ command=xterm -e youtube-dl %arg
 
 
 # regex
-regex="*.tiff"
-command=ristretto %arg
+regex="*.(mp3|wav)"
+command=audacious %arg
+
