@@ -7,14 +7,17 @@
 #include <locale.h>
 #include <regex.h>
 
+#define D_INCLUDE_DIR L"/usr/include/"
+
 struct data {
 	wchar_t *desc;
 	wchar_t *exec;
 } data;
 
 struct data **fext, **links, **domain, **filename, **regex;
-int fexts, linkss, domains, filenames, regexs;
+int fexts, linkss, domains, filenames, regexs, dsize;
 wchar_t *filemanager, *stdaction, *browser, *manpage, *arg;
+wchar_t **idir;
 
 struct data**
 adddata(struct data **da, wchar_t *tail, int *size)
@@ -127,201 +130,216 @@ readconfig(char *file)
 		if(h == NULL)
 				return -1;
 
-			wchar_t *t = malloc((size - pos + 2) * sizeof(wchar_t));
-			if(t == NULL)
-				return -1;
-
-			for(i = 0; i < pos; ++i)
-				h[i] = line[i];
-
-			j = 0;
-			for(i = pos + 1; i < size - 1; ++i) {
-				t[j] = line[i];
-				j++;
-			}
-
-			h[pos] = L'\0';
-			if(wcscmp(h, L"ext") == 0) {
-				fext = adddata(fext, t, &fexts);
-				addflag = 1;
-			} else if(wcscmp(h, L"url") == 0) {
-				links = adddata(links, t, &linkss);
-				addflag = 2;
-			} else if(wcscmp(h, L"domain") == 0) {
-				domain = adddata(domain, t, &domains);
-				addflag = 3;
-			} else if(wcscmp(h, L"filename") == 0) {
-				filename = adddata(filename, t, &filenames);
-				addflag = 4;
-			} else if(wcscmp(h, L"regex") == 0) {
-				regex = adddata(regex, t, &regexs);
-				addflag = 5;
-			} else if(wcscmp(h, L"filemanager") == 0) {
-				filemanager = setcomm(t);
-				addflag = 0;
-			} else if(wcscmp(h, L"stdaction") == 0) {
-				stdaction = setcomm(t);
-				addflag = 0;
-			} else if(wcscmp(h, L"browser") == 0) {
-				browser = setcomm(t);
-				addflag = 0;
-			} else if(wcscmp(h, L"manpage") == 0) {
-				manpage = setcomm(t);
-				addflag = 0;
-			} else if(wcscmp(h, L"command") == 0) {
-				struct data *d = selector(addflag);
-				if(d != NULL) {
-					d->exec = malloc((wcslen(t) + 1)
-						* sizeof(wchar_t));
-					if(d->exec == NULL)
-						return -1;
-
-					d->exec = wcscpy(d->exec, t);
-					d->exec[wcslen(d->exec) - 1] = L'\0';
-				}
-			} else {
-				wprintf(L"unknown parameter: %ls\n", h);
-				struct data *d = selector(addflag);
-				if(d != NULL)
-					d->exec = NULL;
-			}
-
-			free(h);
-			free(t);
-
-			cleanline:
-			free(line);
-			size = 2;
-			line = malloc(size * sizeof(wchar_t));
-			if(line == NULL)
-				return -1;
-		}
-
-		if(line != NULL)
-			free(line);
-
-		fclose(fd);
-		return 0;
-	}
-
-	int
-	extmatch(wchar_t *arg, wchar_t *ext)
-	{
-		if(arg == NULL || ext == NULL)
+		wchar_t *t = malloc((size - pos + 2) * sizeof(wchar_t));
+		if(t == NULL)
 			return -1;
 
-		int i;
-		int esize = wcslen(ext);
-		int asize = wcslen(arg);
-		for(i = 0; esize > 0; ++i) {
-			if((i == esize - 1)
-			&& (arg[asize - i - 2] == L'.'))
-				break;
+		for(i = 0; i < pos; ++i)
+			h[i] = line[i];
 
-			if(arg[asize - i - 1] != ext[esize - i - 1])
-				return 0;
+		j = 0;
+		for(i = pos + 1; i < size - 1; ++i) {
+			t[j] = line[i];
+			j++;
 		}
 
-		return 1;
-	}
+		h[pos] = L'\0';
+		if(wcscmp(h, L"ext") == 0) {
+			fext = adddata(fext, t, &fexts);
+			addflag = 1;
+		} else if(wcscmp(h, L"url") == 0) {
+			links = adddata(links, t, &linkss);
+			addflag = 2;
+		} else if(wcscmp(h, L"domain") == 0) {
+			domain = adddata(domain, t, &domains);
+			addflag = 3;
+		} else if(wcscmp(h, L"filename") == 0) {
+			filename = adddata(filename, t, &filenames);
+			addflag = 4;
+		} else if(wcscmp(h, L"regex") == 0) {
+			regex = adddata(regex, t, &regexs);
+			addflag = 5;
+		} else if(wcscmp(h, L"filemanager") == 0) {
+			filemanager = setcomm(t);
+			addflag = 0;
+		} else if(wcscmp(h, L"stdaction") == 0) {
+			stdaction = setcomm(t);
+			addflag = 0;
+		} else if(wcscmp(h, L"browser") == 0) {
+			browser = setcomm(t);
+			addflag = 0;
+		} else if(wcscmp(h, L"manpage") == 0) {
+			manpage = setcomm(t);
+			addflag = 0;
+		} else if(wcscmp(h, L"idir") == 0) {
+			void *ret = realloc(idir, (dsize + 1)
+				* sizeof(wchar_t*));
+			if(ret == NULL)
+				return -1;
+			
+			idir = ret;
+			dsize++;
+			idir[dsize - 1] = malloc((wcslen(t) + 1)
+				* sizeof(wchar_t));
+			if(idir[dsize - 1] == NULL)
+				return -1;
 
-	wchar_t*
-	replace(wchar_t *str, wchar_t *placeholder, wchar_t *data
-		,wchar_t *format,int extrasize)
-	{
-		int i, j, k, size;
-		int csize = wcslen(str);
-		for(i = 0; i < csize; ++i) {
-			if((str[i] == L'%')
-			&& (i + 3 <= csize)
-			&& (str[i + 1] == placeholder[0])
-			&& (str[i + 2] == placeholder[1])
-			&& (str[i + 3] == placeholder[2])) {
-				wchar_t *head = malloc((i + 1)
+			idir[dsize - 1] = wcscpy(idir[dsize - 1], t);
+			addflag = 0;
+		} else if(wcscmp(h, L"command") == 0) {
+			struct data *d = selector(addflag);
+			if(d != NULL) {
+				d->exec = malloc((wcslen(t) + 1)
 					* sizeof(wchar_t));
-				if(head == NULL)
-					break;
+				if(d->exec == NULL)
+					return -1;
 
-				for(j = 0; j < i; ++j)
-					head[j] = str[j];
-
-				head[j] = L'\0';
-				head = wcsncpy(head, str, i);
-				wchar_t *tail = malloc(csize
-					* sizeof(wchar_t));
-				if(tail == NULL)
-					break;
-
-				k = 0;
-				for(j = i + 4; j < csize; ++j) {
-					tail[k] = str[j];
-					++k;
-				}
-
-				tail[k] = L'\0';
-				size = wcslen(head)
-					+ wcslen(data)
-					+ wcslen(tail)
-					+ extrasize;
-				wchar_t *cmd = malloc(size
-					* sizeof(wchar_t));
-				if(cmd == NULL)
-					break;
-
-				swprintf(cmd, size, format
-					,head
-					,data
-					,tail);
-				free(head);
-				free(tail);
-				return cmd;
+				d->exec = wcscpy(d->exec, t);
+				d->exec[wcslen(d->exec) - 1] = L'\0';
 			}
+		} else {
+			wprintf(L"unknown parameter: %ls\n", h);
+			struct data *d = selector(addflag);
+			if(d != NULL)
+				d->exec = NULL;
 		}
 
-		return NULL;
+		free(h);
+		free(t);
+
+		cleanline:
+		free(line);
+		size = 2;
+		line = malloc(size * sizeof(wchar_t));
+		if(line == NULL)
+			return -1;
 	}
 
-	void
-	evaluate(wchar_t *arg)
-	{
-		int i, j, k;
-		int asize = wcslen(arg);
-		int csize;
-		int freearg = 0;
-		wchar_t *linenum = NULL;
-		wchar_t *command = NULL;
-		wchar_t *cmd = NULL;
-		wchar_t *tmp = NULL;
-		for(i = asize; i > 0; --i) {
-			if(arg[i] == L':') {
-				j = asize - i;
-				linenum = malloc((j + 1) * sizeof(wchar_t));
-				if(linenum == NULL)
-					break;
+	if(line != NULL)
+		free(line);
 
-				for(k = 0; k < j; ++k)
-					linenum[k] = arg[i + k + 1];
+	fclose(fd);
+	return 0;
+}
 
-				linenum[wcslen(linenum)] = L'\0';
-				csize = asize - wcslen(linenum);
-				wchar_t *carg = malloc((csize + 1)
-					* sizeof(wchar_t));
-				if(carg == NULL)
-					break;
+int
+extmatch(wchar_t *arg, wchar_t *ext)
+{
+	if(arg == NULL || ext == NULL)
+		return -1;
 
-				for(k = 0; arg[k] != L':'; ++k)
-					carg[k] = arg[k];
+	int i;
+	int esize = wcslen(ext);
+	int asize = wcslen(arg);
+	for(i = 0; esize > 0; ++i) {
+		if((i == esize - 1)
+		&& (arg[asize - i - 2] == L'.'))
+			break;
 
-				carg[k] = L'\0';
-				arg = carg;
-				asize = wcslen(carg);
-				freearg = 1;
+		if(arg[asize - i - 1] != ext[esize - i - 1])
+			return 0;
+	}
+
+	return 1;
+}
+
+wchar_t*
+replace(wchar_t *str, wchar_t *placeholder, wchar_t *data
+	,wchar_t *format,int extrasize)
+{
+	int i, j, k, size;
+	int csize = wcslen(str);
+	for(i = 0; i < csize; ++i) {
+		if((str[i] == L'%')
+		&& (i + 3 <= csize)
+		&& (str[i + 1] == placeholder[0])
+		&& (str[i + 2] == placeholder[1])
+		&& (str[i + 3] == placeholder[2])) {
+			wchar_t *head = malloc((i + 1)
+				* sizeof(wchar_t));
+			if(head == NULL)
 				break;
+
+			for(j = 0; j < i; ++j)
+				head[j] = str[j];
+
+			head[j] = L'\0';
+			head = wcsncpy(head, str, i);
+			wchar_t *tail = malloc(csize
+				* sizeof(wchar_t));
+			if(tail == NULL)
+				break;
+
+			k = 0;
+			for(j = i + 4; j < csize; ++j) {
+				tail[k] = str[j];
+				++k;
 			}
 
-			if(arg[i] == L'.'
-			|| arg[i] == L'/')
+			tail[k] = L'\0';
+			size = wcslen(head)
+				+ wcslen(data)
+				+ wcslen(tail)
+				+ extrasize;
+			wchar_t *cmd = malloc(size
+				* sizeof(wchar_t));
+			if(cmd == NULL)
 				break;
+
+			swprintf(cmd, size, format
+				,head
+				,data
+				,tail);
+			free(head);
+			free(tail);
+			return cmd;
+		}
+	}
+
+	return NULL;
+}
+
+void
+evaluate(wchar_t *arg)
+{
+	int i, j, k;
+	int asize = wcslen(arg);
+	int csize;
+	int freearg = 0;
+	wchar_t *linenum = NULL;
+	wchar_t *command = NULL;
+	wchar_t *cmd = NULL;
+	wchar_t *tmp = NULL;
+	for(i = asize; i > 0; --i) {
+		if(arg[i] == L':') {
+			j = asize - i;
+			linenum = malloc((j + 1) * sizeof(wchar_t));
+			if(linenum == NULL)
+				break;
+
+			for(k = 0; k < j; ++k)
+				linenum[k] = arg[i + k + 1];
+
+			linenum[wcslen(linenum)] = L'\0';
+			csize = asize - wcslen(linenum);
+			wchar_t *carg = malloc((csize + 1)
+				* sizeof(wchar_t));
+			if(carg == NULL)
+				break;
+
+			for(k = 0; arg[k] != L':'; ++k)
+			carg[k] = arg[k];
+
+			carg[k] = L'\0';
+			arg = carg;
+			asize = wcslen(carg);
+			freearg = 1;
+			break;
+		}
+
+		if(arg[i] == L'.'
+		|| arg[i] == L'/')
+			break;
 	}
 
 	if(linenum == NULL) {
@@ -366,6 +384,65 @@ readconfig(char *file)
 		}
 
 		regfree(&reg);
+	}
+
+	if((arg[0] == L'<')
+	&& (arg[asize - 1] == L'>')) {
+		for(i = 0; i < dsize; ++i) {
+			wchar_t *ipath = idir[i];
+			int psize = wcslen(ipath) + wcslen(arg);
+			wchar_t *p = malloc(psize * sizeof(wchar_t));
+			if(p == NULL)
+				return;
+
+			wchar_t *fn = malloc(asize * sizeof(wchar_t));
+			if(fn == NULL)
+				return;
+
+			for(j = 1; j < asize - 1; ++j)
+				fn[j - 1] = arg[j];
+
+			fn[j - 1] = '\0';
+			swprintf(p, psize, L"%ls%ls", ipath, fn);
+			free(fn);
+			char *cp = malloc((psize + 1) * sizeof(char));
+			if(cp == NULL)
+				return;
+
+			wcstombs(cp, p, psize);
+			int ret = access(cp, F_OK);
+			free(cp);
+			if(ret == 0) {
+				if(freearg == 1)
+					free(arg);
+				else
+					freearg = 1;
+
+				arg = p;
+				break;
+			}
+
+			free(p);
+		}
+	}
+
+	if((arg[0] == L'\"')
+	&& (arg[asize - 1] == L'\"')) {
+		wchar_t *p = malloc((asize + 1) * sizeof(wchar_t));
+		if(p == NULL)
+			return;
+
+		p[0] = L'.';
+		p[1] = L'/';
+		for(i = 2; i < asize; ++i)
+			p[i] = arg[i - 1];
+
+		if(freearg == 1)
+			free(arg);
+		else
+			freearg = 1;
+
+		arg = p;
 	}
 
 	if(!(wcsncmp(arg, L"http", 4))
@@ -582,6 +659,7 @@ main(int argc, char **argv)
 	}
 
 	if(size > 2) {
+		int i;
 		char *home = getenv("HOME");
 		if(home == NULL)
 			return -1;
@@ -613,12 +691,26 @@ main(int argc, char **argv)
 		stdaction = NULL;
 		browser = NULL;
 		manpage = NULL;
+		dsize = 1;
+		idir = calloc(dsize, sizeof(wchar_t*));
+		if(idir == NULL)
+			return -1;
+
+		idir[0] = malloc((wcslen(D_INCLUDE_DIR) + 1) * sizeof(wchar_t));
+		if(idir[0] == NULL)
+			return -1;
+
+		idir[0] = wcscpy(idir[0], D_INCLUDE_DIR);
 		pid = fork();
 		if(pid == 0) {
 			if(readconfig(path) == 0)
 				evaluate(arg);
 		}
 
+		for(i = 0; i < dsize; ++i)
+			free(idir[i]);
+
+		free(idir);
 		free(path);
 		freedata(fext, fexts);
 		freedata(links, linkss);
