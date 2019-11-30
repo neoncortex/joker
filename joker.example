@@ -62,6 +62,6 @@ command=xterm -e youtube-dl %arg
 
 
 # regex
-regex="*.(mp3|wav)"
+regex=.+\.(mp3|wav)
 command=audacious %arg
 

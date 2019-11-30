@@ -357,12 +357,12 @@ evaluate(wchar_t *arg)
 			break;
 
 		char *pattern = malloc((wcslen(d->desc) + 1)
-				* sizeof(char));
+			* sizeof(char));
 		if(pattern == NULL)
 			break;
 
-		wcstombs(pattern, d->desc, wcslen(d->desc) + 1);
-		pattern[strlen(pattern) - 1] = '\0';
+		wcstombs(pattern, d->desc, wcslen(d->desc));
+		pattern[wcslen(d->desc)] = '\0';
 		regex_t reg;
 		int ret = regcomp(&reg, pattern, REG_EXTENDED);
 		free(pattern);
@@ -373,8 +373,8 @@ evaluate(wchar_t *arg)
 		if(carg == NULL)
 			break;
 
-		wcstombs(carg, arg, wcslen(arg) + 1);
-		carg[strlen(carg) - 1] = '\0';
+		wcstombs(carg, arg, wcslen(arg));
+		carg[strlen(carg)] = '\0';
 		ret = regexec(&reg, carg, 0, NULL, 0);
 		free(carg);
 		if(ret == 0) {
