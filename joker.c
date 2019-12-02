@@ -510,7 +510,7 @@ evaluate(wchar_t *arg)
 			}
 		}
 
-		if(arg[asize - 2] == L'/') {
+		if(arg[asize - 1] == L'/') {
 			command = filemanager;
 			goto evaluation;
 		}
@@ -543,6 +543,7 @@ evaluate(wchar_t *arg)
 		}
 
 		command = stdaction;
+		goto evaluation;
 	}
 
 	if((arg[asize - 3] == L'(')
