@@ -700,11 +700,12 @@ main(int argc, char **argv)
 		if(idir == NULL)
 			return -1;
 
-		idir[0] = malloc((wcslen(D_INCLUDE_DIR) + 1) * sizeof(wchar_t));
-		if(idir[0] == NULL)
+		wchar_t *tmp = malloc((wcslen(D_INCLUDE_DIR) + 1)
+			* sizeof(wchar_t));
+		if(tmp == NULL)
 			return -1;
 
-		idir[0] = wcscpy(idir[0], D_INCLUDE_DIR);
+		idir[0] = wcscpy(tmp, D_INCLUDE_DIR);
 		pid = fork();
 		if(pid == 0) {
 			if(readconfig(path) == 0)
