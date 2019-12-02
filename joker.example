@@ -1,67 +1,45 @@
-# filemanager to use when receive a path
+# filemanager
 filemanager=thunar %arg
 
-# standard action/fallback
-stdaction=xterm -e ed %arg
+# default action
+stdaction=xterm -e nvim +%num %arg
 
 # web browser
-browser=links -g %arg
+browser=links2 -g %arg
 
 # manpages
 manpage=xterm -e "man %sec %arg | less +%numG"
 
-# additional C header directory
-# idir=/usr/local/include/
+
+# C header directories (for arm, gcc 8)
+idir=/usr/include/arm-linux-gnueabihf/
+idir=/usr/lib/gcc/arm-linux-gnueabihf/8/include/
+idir=/usr/lib/gcc/arm-linux-gnueabihf/8/include-fixed/
+
+
+# regex
+regex=.+\.(pdf|djvu|ps)
+command=zathura -P %num %arg > /dev/null
+
+regex=.+\.(jpg|png|gif|tiff)
+command=sxiv %arg
+
+regex=.+\.(mp3|wav)
+command=audacious %arg
+
+regex=.+\.(webm|mp4)
+command=vlc --start-time %num file://%arg > /dev/null
+
 
 # extensions
-ext=pdf
-command=zathura -P %num %arg
-
-ext=djvu
-command=zathura -P %num %arg
-
 ext=epub
 command=mupdf %arg
-
-ext=ps
-command=zathura -P %num %arg
-
-ext=txt
-command=xterm -e ed %arg
-
-ext=jpg
-command=ristretto %arg
-
-ext=png
-command=ristretto %arg
-
-ext=gif
-command=ristretto %arg
-
-ext=wemb
-command=vlc --start-time %num file://%arg
-
-ext=mp4
-command=vlc --start-time %num file://%arg
 
 ext=kdbx
 command=keepassx %arg
 
-ext=c
-command=xterm -e vim +%num %arg
 
-
-# links
-url=http://www.google.com/
-command=midori %arg
-
-
-# domains
+# domain
 domain=www.youtube.com
-command=xterm -e youtube-dl %arg
-
-
-# regex
-regex=.+\.(mp3|wav)
-command=audacious %arg
+command=xterm -e youtube-dl -f 18 -o '/home/pi/Vídeos/%(title)s.%(ext)s' %arg
 
