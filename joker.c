@@ -179,22 +179,22 @@ readconfig(char *file)
 			
 			idir = ret;
 			dsize++;
-			idir[dsize - 1] = malloc((wcslen(t) + 1)
+			wchar_t *tmp = malloc((wcslen(t) + 1)
 				* sizeof(wchar_t));
-			if(idir[dsize - 1] == NULL)
+			if(tmp == NULL)
 				return -1;
 
-			idir[dsize - 1] = wcscpy(idir[dsize - 1], t);
+			idir[dsize - 1] = wcscpy(tmp, t);
 			addflag = 0;
 		} else if(wcscmp(h, L"command") == 0) {
 			struct data *d = selector(addflag);
 			if(d != NULL) {
-				d->exec = malloc((wcslen(t) + 1)
+				wchar_t *tmp = malloc((wcslen(t) + 1)
 					* sizeof(wchar_t));
-				if(d->exec == NULL)
+				if(tmp == NULL)
 					return -1;
 
-				d->exec = wcscpy(d->exec, t);
+				d->exec = wcscpy(tmp, t);
 				d->exec[wcslen(d->exec) - 1] = L'\0';
 			}
 		} else {
@@ -390,6 +390,9 @@ evaluate(wchar_t *arg)
 	&& (arg[asize - 1] == L'>')) {
 		for(i = 0; i < dsize; ++i) {
 			wchar_t *ipath = idir[i];
+			if(ipath[wcslen(ipath) - 1] == L'\n')
+				ipath[wcslen(ipath) - 1] = L'\0';
+
 			int psize = wcslen(ipath) + wcslen(arg);
 			wchar_t *p = malloc(psize * sizeof(wchar_t));
 			if(p == NULL)
