@@ -29,11 +29,11 @@ adddata(struct data **da, wchar_t *tail, int *size)
 	if(d == NULL)
 		return NULL;
 
-	d->desc = malloc((wcslen(tail) + 1) * sizeof(wchar_t));
-	if(d->desc == NULL)
+	wchar_t *tmp = malloc((wcslen(tail) + 1) * sizeof(wchar_t));
+	if(tmp == NULL)
 		return NULL;
 
-	d->exec = wcscpy(d->desc, tail);
+	d->exec = wcscpy(tmp, tail);
 	d->exec[wcslen(d->exec) - 1] = L'\0';
 	da[*size - 1] = d;
 	void *ret = realloc(da, (*size + 1)
@@ -51,12 +51,12 @@ setcomm(wchar_t *com)
 	if(com == NULL)
 		return NULL;
 
-	wchar_t *str = malloc((wcslen(com) + 1)
+	wchar_t *tmp = malloc((wcslen(com) + 1)
 		* sizeof(wchar_t));
-	if(str == NULL)
+	if(tmp == NULL)
 		return NULL;
 
-	str = wcscpy(str, com);
+	str = wcscpy(tmp, com);
 	str[wcslen(str) - 1] = L'\0';
 	return str;
 }
