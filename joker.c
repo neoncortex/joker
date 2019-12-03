@@ -33,8 +33,8 @@ adddata(struct data **da, wchar_t *tail, int *size)
 	if(tmp == NULL)
 		return NULL;
 
-	d->exec = wcscpy(tmp, tail);
-	d->exec[wcslen(d->exec) - 1] = L'\0';
+	d->desc = wcscpy(tmp, tail);
+	d->desc[wcslen(d->desc) - 1] = L'\0';
 	da[*size - 1] = d;
 	void *ret = realloc(da, (*size + 1)
 		* sizeof(struct data*));
@@ -56,7 +56,7 @@ setcomm(wchar_t *com)
 	if(tmp == NULL)
 		return NULL;
 
-	str = wcscpy(tmp, com);
+	wchar_t *str = wcscpy(tmp, com);
 	str[wcslen(str) - 1] = L'\0';
 	return str;
 }
@@ -362,7 +362,6 @@ evaluate(wchar_t *arg)
 			break;
 
 		wcstombs(pattern, d->desc, wcslen(d->desc));
-		pattern[wcslen(d->desc)] = '\0';
 		regex_t reg;
 		int ret = regcomp(&reg, pattern, REG_EXTENDED);
 		free(pattern);
@@ -373,8 +372,7 @@ evaluate(wchar_t *arg)
 		if(carg == NULL)
 			break;
 
-		wcstombs(carg, arg, wcslen(arg));
-		carg[strlen(carg)] = '\0';
+		wcstombs(carg, arg, wcslen(arg) + 1);
 		ret = regexec(&reg, carg, 0, NULL, 0);
 		free(carg);
 		if(ret == 0) {
@@ -519,7 +517,7 @@ evaluate(wchar_t *arg)
 		}
 
 		int havext = 0;
-		for(i = wcslen(arg) - 2; i > 0; i--) {
+		for(i = wcslen(arg) - 1; i > 0; i--) {
 			if(arg[i] == L'/')
 				break;
 
