@@ -30,16 +30,21 @@ adddata(struct data **da, wchar_t *tail, int *size)
 		return NULL;
 
 	wchar_t *tmp = malloc((wcslen(tail) + 1) * sizeof(wchar_t));
-	if(tmp == NULL)
+	if(tmp == NULL) {
+		free(d);
 		return NULL;
+	}
 
 	d->desc = wcscpy(tmp, tail);
 	d->desc[wcslen(d->desc) - 1] = L'\0';
 	da[*size - 1] = d;
 	void *ret = realloc(da, (*size + 1)
 		* sizeof(struct data*));
-	if(ret == NULL)
+	if(ret == NULL) {
+		free(d->desc);
+		free(d);
 		return NULL;
+	}
 
 	*size+=1;
 	return ret;
@@ -92,16 +97,21 @@ readconfig(char *file)
 	int size = 2;
 	wchar_t c;
 	wchar_t *line = malloc(size * sizeof(wchar_t));
-	if(line == NULL)
+	if(line == NULL) {
+		fclose(fd);
 		return -1;
+	}
 
 	int i, j;
 	int addflag = 0;
 	while((c = fgetwc(fd)) != WEOF) {
 		line[size - 2] = c;
 		void *ret = realloc(line, (size + 1) * sizeof(wchar_t));
-		if(ret == NULL)
+		if(ret == NULL) {
+			fclose(fd);
+			free(line);
 			return -1;
+		}
 
 		line = ret;
 		size++;
@@ -127,12 +137,19 @@ readconfig(char *file)
 			goto cleanline;
 
 		wchar_t *h = malloc((pos + 1) * sizeof(wchar_t));
-		if(h == NULL)
-				return -1;
+		if(h == NULL) {
+			fclose(fd);
+			free(line);
+			return -1;
+		}
 
 		wchar_t *t = malloc((size - pos + 2) * sizeof(wchar_t));
-		if(t == NULL)
+		if(t == NULL) {
+			fclose(fd);
+			free(line);
+			free(h);
 			return -1;
+		}
 
 		for(i = 0; i < pos; ++i)
 			h[i] = line[i];
@@ -174,15 +191,25 @@ readconfig(char *file)
 		} else if(wcscmp(h, L"idir") == 0) {
 			void *ret = realloc(idir, (dsize + 1)
 				* sizeof(wchar_t*));
-			if(ret == NULL)
+			if(ret == NULL) {
+				fclose(fd);
+				free(line);
+				free(h);
+				free(t);
 				return -1;
+			}
 			
 			idir = ret;
 			dsize++;
 			wchar_t *tmp = malloc((wcslen(t) + 1)
 				* sizeof(wchar_t));
-			if(tmp == NULL)
+			if(tmp == NULL) {
+				fclose(fd);
+				free(line);
+				free(h);
+				free(t);
 				return -1;
+			}
 
 			idir[dsize - 1] = wcscpy(tmp, t);
 			addflag = 0;
@@ -191,8 +218,13 @@ readconfig(char *file)
 			if(d != NULL) {
 				wchar_t *tmp = malloc((wcslen(t) + 1)
 					* sizeof(wchar_t));
-				if(tmp == NULL)
+				if(tmp == NULL) {
+					fclose(fd);
+					free(line);
+					free(h);
+					free(t);
 					return -1;
+				}
 
 				d->exec = wcscpy(tmp, t);
 				d->exec[wcslen(d->exec) - 1] = L'\0';
@@ -231,9 +263,8 @@ extmatch(wchar_t *arg, wchar_t *ext)
 	int i;
 	int esize = wcslen(ext);
 	int asize = wcslen(arg);
-	for(i = 0; esize > 0; ++i) {
-		if((i == esize - 1)
-		&& (arg[asize - i - 2] == L'.'))
+	for(i = 0; i < esize; ++i) {
+		if(arg[asize - i - 1] == L'.')
 			break;
 
 		if(arg[asize - i - 1] != ext[esize - i - 1])
@@ -267,8 +298,10 @@ replace(wchar_t *str, wchar_t *placeholder, wchar_t *data
 			head = wcsncpy(head, str, i);
 			wchar_t *tail = malloc(csize
 				* sizeof(wchar_t));
-			if(tail == NULL)
+			if(tail == NULL) {
+				free(head);
 				break;
+			}
 
 			k = 0;
 			for(j = i + 4; j < csize; ++j) {
@@ -332,7 +365,7 @@ evaluate(wchar_t *arg)
 
 			carg[k] = L'\0';
 			arg = carg;
-			asize = wcslen(carg);
+			asize = wcslen(arg);
 			freearg = 1;
 			break;
 		}
@@ -345,7 +378,7 @@ evaluate(wchar_t *arg)
 	if(linenum == NULL) {
 		linenum = malloc(2 * sizeof(wchar_t));
 		if(linenum == NULL)
-			return;
+			goto evaluation;
 
 		linenum[0] = L'1';
 		linenum[1] = L'\0';
@@ -361,7 +394,7 @@ evaluate(wchar_t *arg)
 		if(pattern == NULL)
 			break;
 
-		wcstombs(pattern, d->desc, wcslen(d->desc));
+		wcstombs(pattern, d->desc, wcslen(d->desc) + 1);
 		regex_t reg;
 		int ret = regcomp(&reg, pattern, REG_EXTENDED);
 		free(pattern);
@@ -369,8 +402,11 @@ evaluate(wchar_t *arg)
 			continue;
 
 		char *carg = malloc((wcslen(arg) + 1) * sizeof(char));
-		if(carg == NULL)
+		if(carg == NULL) {
+			regfree(&reg);
+			free(pattern);
 			break;
+		}
 
 		wcstombs(carg, arg, wcslen(arg) + 1);
 		ret = regexec(&reg, carg, 0, NULL, 0);
@@ -394,11 +430,13 @@ evaluate(wchar_t *arg)
 			int psize = wcslen(ipath) + wcslen(arg);
 			wchar_t *p = malloc(psize * sizeof(wchar_t));
 			if(p == NULL)
-				return;
+				break;
 
 			wchar_t *fn = malloc(asize * sizeof(wchar_t));
-			if(fn == NULL)
-				return;
+			if(fn == NULL) {
+				free(p);
+				break;
+			}
 
 			for(j = 1; j < asize - 1; ++j)
 				fn[j - 1] = arg[j];
@@ -407,8 +445,11 @@ evaluate(wchar_t *arg)
 			swprintf(p, psize, L"%ls%ls", ipath, fn);
 			free(fn);
 			char *cp = malloc((psize + 1) * sizeof(char));
-			if(cp == NULL)
-				return;
+			if(cp == NULL) {
+				free(p);
+				free(fn);
+				break;
+			}
 
 			wcstombs(cp, p, psize);
 			int ret = access(cp, F_OK);
@@ -420,6 +461,7 @@ evaluate(wchar_t *arg)
 					freearg = 1;
 
 				arg = p;
+				asize = wcslen(arg);
 				break;
 			}
 
@@ -431,7 +473,7 @@ evaluate(wchar_t *arg)
 	&& (arg[asize - 1] == L'\"')) {
 		wchar_t *p = malloc((asize + 1) * sizeof(wchar_t));
 		if(p == NULL)
-			return;
+			goto evaluation;
 
 		p[0] = L'.';
 		p[1] = L'/';
@@ -444,6 +486,7 @@ evaluate(wchar_t *arg)
 			freearg = 1;
 
 		arg = p;
+		asize = wcslen(arg);
 	}
 
 	if(!(wcsncmp(arg, L"http", 4))
@@ -517,7 +560,7 @@ evaluate(wchar_t *arg)
 		}
 
 		int havext = 0;
-		for(i = wcslen(arg) - 1; i > 0; i--) {
+		for(i = asize; i > 0; --i) {
 			if(arg[i] == L'/')
 				break;
 
@@ -551,7 +594,7 @@ evaluate(wchar_t *arg)
 	&& (arg[asize - 1] == L')')) {
 		wchar_t *sec = malloc(2 * sizeof(wchar_t));
 		if(sec == NULL)
-			return;
+			goto evaluation;
 
 		sec[0] = arg[asize - 2];
 		sec[1] = L'\0';
@@ -565,8 +608,13 @@ evaluate(wchar_t *arg)
 		}
 
 		wchar_t *newarg = malloc(asize * sizeof(wchar_t));
-		if(newarg == NULL)
-			return;
+		if(newarg == NULL) {
+			free(sec);
+			free(tmp);
+			free(command);
+			command = NULL;
+			goto evaluation;
+		}
 
 		for(i = 0;; ++i) {
 			if(arg[i] == L'(') {
@@ -587,32 +635,32 @@ evaluate(wchar_t *arg)
 		asize = wcslen(arg);
 	}
 	
-	if(command == NULL)
-		return;
-
 	evaluation:
-	tmp = replace(command, L"num", linenum, L"%ls%ls%ls", 1);
-	if(tmp != NULL) {
-		free(cmd);
-		cmd = tmp;
-		command = cmd;
+	if(command != NULL) {
+		tmp = replace(command, L"num", linenum, L"%ls%ls%ls", 1);
+		if(tmp != NULL) {
+			free(cmd);
+			cmd = tmp;
+			command = cmd;
+		}
+
+		tmp = replace(command, L"arg", arg, L"%ls'%ls'%ls", 3);
+		if(tmp != NULL) {
+			free(cmd);
+			cmd = tmp;
+			command = cmd;
+		}
+
+		char *scommand = malloc((wcslen(command) + 2)
+			* sizeof(char));
+		if(scommand == NULL)
+			return;
+
+		wcstombs(scommand, command, (wcslen(command) + 2));
+		system(scommand);
+		free(scommand);
 	}
 
-	tmp = replace(command, L"arg", arg, L"%ls'%ls'%ls", 3);
-	if(tmp != NULL) {
-		free(cmd);
-		cmd = tmp;
-		command = cmd;
-	}
-
-	char *scommand = malloc((wcslen(command) + 2)
-		* sizeof(char));
-	if(scommand == NULL)
-		return;
-
-	wcstombs(scommand, command, (wcslen(command) + 2));
-	system(scommand);
-	free(scommand);
 	free(linenum);
 	free(cmd);
 	if(freearg == 1)
