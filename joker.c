@@ -238,13 +238,14 @@ readconfig(char *file)
 
 		free(h);
 		free(t);
-
-		cleanline:
+cleanline:
 		free(line);
 		size = 2;
 		line = malloc(size * sizeof(wchar_t));
-		if(line == NULL)
+		if(line == NULL) {
+			fclose(fd);
 			return -1;
+		}
 	}
 
 	if(line != NULL)
@@ -373,8 +374,8 @@ evaluate(wchar_t *arg)
 			break;
 		}
 
-		if(arg[i] == L'.'
-		|| arg[i] == L'/')
+		if((arg[i] == L'.')
+		|| (arg[i] == L'/' && arg[i - 1] != L':'))
 			break;
 	}
 
@@ -635,7 +636,7 @@ evaluate(wchar_t *arg)
 		asize = wcslen(arg);
 	}
 	
-	evaluation:
+evaluation:
 	if(command != NULL) {
 		tmp = replace(command, L"num", linenum, L"%ls%ls%ls", 1);
 		if(tmp != NULL) {
@@ -795,7 +796,8 @@ main(int argc, char **argv)
 		}
 
 		idir[0] = wcscpy(tmp, D_INCLUDE_DIR);
-		if(readconfig(path) == 0) {
+		int rc = readconfig(path);
+		if(rc == 0) {
 			for(i = 0; i < sizel; ++i) {
 				pid = fork();
 				if(pid == 0) {
@@ -803,15 +805,17 @@ main(int argc, char **argv)
 					break;
 				}
 			}
-		}
+		} else
+			r = rc;
 
-		freelists:
+freelists:
 		if(idir != NULL) {
 			for(i = 0; i < dsize; ++i)
 				free(idir[i]);
+
+			free(idir);
 		}
 
-		free(idir);
 		free(path);
 		freedata(fext, fexts);
 		freedata(links, linkss);
@@ -829,7 +833,7 @@ main(int argc, char **argv)
 		free(manpage);
 	}
 
-	freeargl:
+freeargl:
 	for(i = 0; i < sizel; ++i)
 		free(argl[i]);
 
