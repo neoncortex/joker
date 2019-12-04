@@ -2,7 +2,7 @@
 Automatic application launcher inspired by Plan9 Plumber
 
 * This program receive a string as input via stdin and does something based on patterns setted in it's configuration file.
-By a pattern I mean: an file extension, an url, a domain, a filename, a regex.
+It can deal with: file extensions, url's, domains, filenames, regex, manpages, C headers.
 
 
 * I wrote this to be used in text editors, such as ed, vim, etc.  The idea is to launch
@@ -12,6 +12,10 @@ in Acme.  It's useful to bookmark things:
 * printf(3):30  # line 30 of the section 3 printf manpage.
 * <stdio.h>:25  # line 25 of the C header stdio.h.
 * /path/to/file.mp4:60  # video file, which will start at second 60
+* htttp://websitex.com  # hyperlink
+
+
+The : is used to point to a page in document, time in a video/audio file, line number in a file, andif you are using nvim as in the joker.example, it can be used to pass a pattern, like: <stdio.h>:/#define.  This will place the cursor in the first #define ocurrence after opening the file.  You can pass any nvim command since it's using the + (see nvim(1):129, nvim(1):134, nvim(1):141).  You can use that to create sort of links in files, you just need unique text pattern.
 
 
 For nvim, I added to the init.vim:<br />
@@ -25,6 +29,9 @@ I suppose it will be the same for vim.  After that, you use F2 key to invoke jok
 a meaningful content for joker.  If you press F2 in visual mode, it sends the actual
 selection to joker.  It will use register 1 of the (n)vim editor, so any data there
 will be erased.
+
+
+You can send multiple consecutive lines easily, for example: :10,20w !joker
 
 
 * The configuration file is ~/.joker
