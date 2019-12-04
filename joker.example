@@ -33,7 +33,7 @@ command=vlc --start-time %num file://%arg > /dev/null
 
 # extensions
 ext=epub
-command=mupdf %arg
+command=xterm -e mupdf %arg
 
 ext=kdbx
 command=keepassx %arg
