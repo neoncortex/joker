@@ -364,7 +364,7 @@ evaluate(wchar_t *arg)
 				break;
 
 			for(k = 0; arg[k] != L':'; ++k)
-			carg[k] = arg[k];
+				carg[k] = arg[k];
 
 			carg[k] = L'\0';
 			arg = carg;
@@ -602,6 +602,7 @@ evaluate(wchar_t *arg)
 		command = manpage;
 		wchar_t *tmp = replace(command, L"sec", sec, L"%ls%ls%ls"
 			,1);
+		free(sec);
 		if(tmp != NULL) {
 			free(cmd);
 			cmd = tmp;
@@ -610,7 +611,6 @@ evaluate(wchar_t *arg)
 
 		wchar_t *newarg = malloc(asize * sizeof(wchar_t));
 		if(newarg == NULL) {
-			free(sec);
 			free(tmp);
 			free(command);
 			command = NULL;
@@ -631,13 +631,13 @@ evaluate(wchar_t *arg)
 		else
 			freearg = 1;
 
-		free(sec);
 		arg = newarg;
 		asize = wcslen(arg);
 	}
 	
 	evaluation:
 	if(command != NULL) {
+		wprintf(L"%ls -- %ls\n", command, arg);
 		tmp = replace(command, L"num", linenum, L"%ls%ls%ls", 1);
 		if(tmp != NULL) {
 			free(cmd);
@@ -654,12 +654,11 @@ evaluate(wchar_t *arg)
 
 		char *scommand = malloc((wcslen(command) + 2)
 			* sizeof(char));
-		if(scommand == NULL)
-			return;
-
-		wcstombs(scommand, command, (wcslen(command) + 2));
-		system(scommand);
-		free(scommand);
+		if(scommand != NULL) {
+			wcstombs(scommand, command, (wcslen(command) + 2));
+			system(scommand);
+			free(scommand);
+		}
 	}
 
 	free(linenum);
@@ -687,41 +686,83 @@ int
 main(int argc, char **argv)
 {
 	setlocale(LC_ALL, getenv("LANG"));
-	pid_t pid = 0;
-	wchar_t c;
-	int size = 2;
-	arg = malloc(size * sizeof(wchar_t));
-	if(arg == NULL)
+	int i;
+	int r = 0;
+	int sizel = 1;
+	wchar_t **argl = calloc(sizel, sizeof(wchar_t*));
+	if(argl == NULL)
 		return -1;
 
-	while((c = fgetwc(stdin)) != L'\n') {
-		if((size == 2 && c == L' ')
-		|| (size == 2 && c == L'\t'))
+	wchar_t c;
+	while((c = fgetwc(stdin)) != WEOF) {
+		int size = 3;
+		arg = malloc(size * sizeof(wchar_t));
+		if(arg == NULL) {
+			r = -1;
+			goto freeargl;
+		}
+
+		if(c != L'\n')
+			arg[0] = c;
+		else {
+			free(arg);
 			continue;
+		}
 
-		arg[size - 2] = c;
-		void *ret = realloc(arg, (size + 1) * sizeof(wchar_t));
-		if(ret == NULL)
-			return -1;
+		while((c = fgetwc(stdin)) != L'\n') {
+			if((size == 2 && c == L' ')
+			|| (size == 2 && c == L'\t'))
+				continue;
 
-		size++;
-		arg = ret;
-		arg[size - 2] = L'\0';
+			arg[size - 2] = c;
+			void *ret = realloc(arg, (size + 1)
+				* sizeof(wchar_t));
+			if(ret == NULL) {
+				free(arg);
+				r = -1;
+				goto freeargl;
+			}
+
+			size++;
+			arg = ret;
+			arg[size - 2] = L'\0';
+		}
+
+		argl[sizel - 1] = arg;
+		void *ret = realloc(argl, (sizel + 1)
+			* sizeof(wchar_t*));
+		if(ret == NULL) {
+			free(arg);
+			r = -1;
+			goto freeargl;
+		}
+
+		sizel++;
+		argl = ret;
 	}
 
-	if(size > 2) {
-		int i;
+	if(sizel > 1) {
+		pid_t pid = 0;
+		filemanager = NULL;
+		stdaction = NULL;
+		browser = NULL;
+		manpage = NULL;
+		idir = NULL;
 		char *home = getenv("HOME");
-		if(home == NULL)
-			return -1;
+		if(home == NULL) {
+			r = -1;
+			goto freeargl;
+		}
 
 		char *cname = ".joker";
 		int size = strlen(home)
 			+ strlen(cname)
 			+ 2;
 		char *path = malloc(size * sizeof(char));
-		if(path == NULL)
-			return -1;
+		if(path == NULL) {
+			r = -1;
+			goto freeargl;
+		}
 
 		snprintf(path, size, "%s/%s", home, cname);
 		fexts = 1;
@@ -735,32 +776,41 @@ main(int argc, char **argv)
 		regex = calloc(regexs, sizeof(struct data*));
 		filename = calloc(filenames, sizeof(struct data*));
 		if(fext == NULL || links == NULL || domain == NULL
-		|| filename == NULL || regex == NULL)
-			return -1;
+		|| filename == NULL || regex == NULL) {
+			r = -1;
+			goto freelists;
+		}
 
-		filemanager = NULL;
-		stdaction = NULL;
-		browser = NULL;
-		manpage = NULL;
 		dsize = 1;
 		idir = calloc(dsize, sizeof(wchar_t*));
-		if(idir == NULL)
-			return -1;
+		if(idir == NULL) {
+			r = -1;
+			goto freelists;
+		}
 
 		wchar_t *tmp = malloc((wcslen(D_INCLUDE_DIR) + 1)
 			* sizeof(wchar_t));
-		if(tmp == NULL)
-			return -1;
-
-		idir[0] = wcscpy(tmp, D_INCLUDE_DIR);
-		pid = fork();
-		if(pid == 0) {
-			if(readconfig(path) == 0)
-				evaluate(arg);
+		if(tmp == NULL) {
+			r = -1;
+			goto freelists;
 		}
 
-		for(i = 0; i < dsize; ++i)
-			free(idir[i]);
+		idir[0] = wcscpy(tmp, D_INCLUDE_DIR);
+		if(readconfig(path) == 0) {
+			for(i = 0; i < sizel; ++i) {
+				pid = fork();
+				if(pid == 0) {
+					evaluate(argl[i]);
+					break;
+				}
+			}
+		}
+
+		freelists:
+		if(idir != NULL) {
+			for(i = 0; i < dsize; ++i)
+				free(idir[i]);
+		}
 
 		free(idir);
 		free(path);
@@ -780,6 +830,10 @@ main(int argc, char **argv)
 		free(manpage);
 	}
 
-	free(arg);
-	return 0;
+	freeargl:
+	for(i = 0; i < sizel; ++i)
+		free(argl[i]);
+
+	free(argl);
+	return r;
 }
