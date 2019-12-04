@@ -316,8 +316,11 @@ replace(wchar_t *str, wchar_t *placeholder, wchar_t *data
 				+ extrasize;
 			wchar_t *cmd = malloc(size
 				* sizeof(wchar_t));
-			if(cmd == NULL)
+			if(cmd == NULL) {
+				free(head);
+				free(tail);
 				break;
+			}
 
 			swprintf(cmd, size, format
 				,head
@@ -404,7 +407,6 @@ evaluate(wchar_t *arg)
 		char *carg = malloc((wcslen(arg) + 1) * sizeof(char));
 		if(carg == NULL) {
 			regfree(&reg);
-			free(pattern);
 			break;
 		}
 
@@ -447,7 +449,6 @@ evaluate(wchar_t *arg)
 			char *cp = malloc((psize + 1) * sizeof(char));
 			if(cp == NULL) {
 				free(p);
-				free(fn);
 				break;
 			}
 
