@@ -637,7 +637,6 @@ evaluate(wchar_t *arg)
 	
 	evaluation:
 	if(command != NULL) {
-		wprintf(L"%ls -- %ls\n", command, arg);
 		tmp = replace(command, L"num", linenum, L"%ls%ls%ls", 1);
 		if(tmp != NULL) {
 			free(cmd);
