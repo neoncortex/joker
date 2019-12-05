@@ -12,7 +12,7 @@ in Acme.  It's useful to bookmark things:
 * printf(3):30  # line 30 of the section 3 printf manpage.
 * <stdio.h>:25  # line 25 of the C header stdio.h.
 * /path/to/file.mp4:60  # video file, which will start at second 60
-* htttp://websitex.com  # hyperlink
+* http://websitex.com  # hyperlink
 
 
 The : is used to point to a page in document, time in a video/audio file, line number in a file, and if you are using nvim as in the joker.example, it can be used to pass a pattern, like: <stdio.h>:/#define.  This will place the cursor in the first #define ocurrence after opening the file.  You can pass any nvim command since it's using the + (see nvim(1):129, nvim(1):134, nvim(1):141).  You can use that to create sort of links in files, you just need unique text pattern.
