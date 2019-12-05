@@ -375,7 +375,7 @@ evaluate(wchar_t *arg)
 		}
 
 		if((arg[i] == L'.')
-		|| (arg[i] == L'/' && arg[i - 1] != L':'))
+		|| (i - 1 > 0 && arg[i] == L'/' && arg[i - 1] != L':'))
 			break;
 	}
 
@@ -695,16 +695,14 @@ main(int argc, char **argv)
 
 	wchar_t c;
 	while((c = fgetwc(stdin)) != WEOF) {
-		int size = 3;
+		int size = 2;
 		arg = malloc(size * sizeof(wchar_t));
 		if(arg == NULL) {
 			r = -1;
 			goto freeargl;
 		}
 
-		if(c != L'\n')
-			arg[0] = c;
-		else {
+		if(c == L'\n') {
 			free(arg);
 			continue;
 		}
