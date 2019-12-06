@@ -402,8 +402,10 @@ evaluate(wchar_t *arg)
 		regex_t reg;
 		int ret = regcomp(&reg, pattern, REG_EXTENDED);
 		free(pattern);
-		if(ret > 0)
+		if(ret > 0) {
+			regfree(&reg);
 			continue;
+		}
 
 		char *carg = malloc((wcslen(arg) + 1) * sizeof(char));
 		if(carg == NULL) {
@@ -707,7 +709,7 @@ main(int argc, char **argv)
 			continue;
 		}
 
-		while((c = fgetwc(stdin)) != L'\n') {
+		do {
 			if((size == 2 && c == L' ')
 			|| (size == 2 && c == L'\t'))
 				continue;
@@ -724,7 +726,7 @@ main(int argc, char **argv)
 			size++;
 			arg = ret;
 			arg[size - 2] = L'\0';
-		}
+		} while((c = fgetwc(stdin)) != L'\n');
 
 		argl[sizel - 1] = arg;
 		void *ret = realloc(argl, (sizel + 1)
