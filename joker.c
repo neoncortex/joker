@@ -92,7 +92,7 @@ readconfig(char *file)
 
 	FILE *fd = fopen(file, "r");
 	if(fd == NULL)
-		return -1;
+		return -2;
 
 	int size = 2;
 	wchar_t c;
@@ -265,7 +265,8 @@ extmatch(wchar_t *arg, wchar_t *ext)
 	int esize = wcslen(ext);
 	int asize = wcslen(arg);
 	for(i = 0; i < esize; ++i) {
-		if(arg[asize - i - 1] == L'.')
+		if((arg[asize - i - 1] == L'.')
+		&& (esize - i == 0))
 			break;
 
 		if(arg[asize - i - 1] != ext[esize - i - 1])
@@ -374,8 +375,7 @@ evaluate(wchar_t *arg)
 			break;
 		}
 
-		if((arg[i] == L'.')
-		|| (i - 1 > 0 && arg[i] == L'/' && arg[i - 1] != L':'))
+		if(i - 1 > 0 && arg[i] == L'/' && arg[i - 1] != L':')
 			break;
 	}
 
