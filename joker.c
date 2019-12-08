@@ -348,8 +348,10 @@ evaluate(wchar_t *arg)
 	wchar_t *command = NULL;
 	wchar_t *cmd = NULL;
 	wchar_t *tmp = NULL;
-	for(i = asize; i > 0; --i) {
-		if(arg[i] == L':') {
+	for(i = 0; i < asize; ++i) {
+		if((arg[i] == L':')
+		&& ((i + 1) < asize)
+		&& (arg[i + 2] != L'/')) {
 			j = asize - i;
 			linenum = malloc((j + 1) * sizeof(wchar_t));
 			if(linenum == NULL)
@@ -374,9 +376,6 @@ evaluate(wchar_t *arg)
 			freearg = 1;
 			break;
 		}
-
-		if(i - 1 > 0 && arg[i] == L'/' && arg[i - 1] != L':')
-			break;
 	}
 
 	if(linenum == NULL) {
@@ -546,7 +545,8 @@ evaluate(wchar_t *arg)
 	}
 
 	if((arg[0] == L'/')
-	|| (arg[0] == L'.' && arg[1] == L'/')) {
+	|| (arg[0] == L'.' && arg[1] == L'/')
+	|| (arg[0] == L'.' && arg[1] == L'.' && arg[2] == L'/')) {
 		for(i = 0; i < filenames; ++i) {
 			struct data *d = filename[i];
 			if(d == NULL)

@@ -15,7 +15,7 @@ in Acme.  It's useful to bookmark things:
 * http://websitex.com  # hyperlink
 
 
-The : is used to point to a page in document, time in a video/audio file, line number in a file, and if you are using nvim as in the joker.example, it can be used to pass a pattern, like: <stdio.h>:/#define.  This will place the cursor in the first #define ocurrence after opening the file.  You can pass any nvim command since it's using the + (see nvim(1):129, nvim(1):134, nvim(1):141).  You can use that to create sort of links in files, you just need unique text pattern.
+The : is used to point to a page in document, time in a video/audio file, line number in a file, and if you are using nvim as in the joker.example, it can be used to pass a pattern, like: <stdio.h>:/#define.  This will place the cursor in the first #define ocurrence after opening the file.  You can pass any nvim command since it's using the + (see nvim 0.3.4: nvim(1):129, nvim(1):134, nvim(1):141).  You can use that to create sort of links in files, you just need unique text pattern.
 
 
 For nvim, I added to the init.vim:<br />
@@ -57,12 +57,11 @@ will be executed, and so on.
 
 Requirements and limitations:
 * When passing a url as input, it needs to end in / for the domain matching.
-* %num, %sec and %arg can't be used as part of commands since they are used as placeholders
-for line number, manual section and user input.
+* %num, %sec and %arg can't be used as part of commands since they are used as placeholders.
+* The : character can't be used in filenames, since it's used as a placeholder for line/pattern.
 * When passing a directory as input, it's path needs to end in /.
-* Relative path's must start with ./
-* If it receives a "string" like that, it will be interpreted as a relative path, will
-be appended ./ and dealt with as a file.
+* Relative path's must start with ./ (unless it points a directory up ../).
+* If it receives a "string" like that, it will be interpreted as a relative path, will be appended ./ and dealt with as a file.
 * The shell needs to have LANG set.
 
 
