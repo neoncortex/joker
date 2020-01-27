@@ -20,7 +20,7 @@ The : is used to point to a page in document, time in a video/audio file, line n
 
 For nvim, I added to the init.vim:<br />
 map <F2> :.w !joker<CR><br />
-vmap <F2> "1y:!echo '<C-R>1'\|joker<CR><br />
+vmap <F2> "1y:!echo '\<C-R\>1'\|joker<CR><br />
 
 
 I suppose it will be the same for vim.  After that, you use F2 key to invoke joker.
@@ -45,7 +45,7 @@ then, if you invoke the program as:<br />
 echo /path/to/file.pdf:10 | joker<br />
 or press F2 when a line/selection contains the /path/to/pdf:10
 
-it will open the /path/to/file.pdf on line 10, inside the zathura document reader.
+it will open the /path/to/file.pdf on page 10, inside the zathura document reader.
 
 
 * It uses the POSIX regular expressions in Extended mode.
