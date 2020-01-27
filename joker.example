@@ -1,7 +1,7 @@
 # applications
 filemanager=rox %arg
 stdaction=uxterm -e "nvim +%num %arg"
-browser=linksc -g %arg
+browser=links2 -g %arg
 manpage=uxterm -e "man %sec %arg | nvim -R - +%num"
 
 
