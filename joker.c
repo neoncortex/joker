@@ -8,6 +8,8 @@
 #include <regex.h>
 
 #define D_INCLUDE_DIR L"/usr/include/"
+#define PROGS_S 4
+#define DLIST_S 5
 
 struct data {
 	wchar_t *desc;
@@ -15,7 +17,7 @@ struct data {
 } data;
 
 struct data **fext, **links, **domain, **filename, **regex;
-int fexts, linkss, domains, filenames, regexs, dsize;
+int fext_s, links_s, domain_s, filename_s, regex_s, dsize;
 wchar_t *filemanager, *stdaction, *browser, *manpage, *arg;
 wchar_t **idir;
 
@@ -71,15 +73,15 @@ selector(int x)
 {
 	struct data *d = NULL;
 	if(x == 1)
-		d = fext[fexts - 2];
+		d = fext[fext_s - 2];
 	else if(x == 2)
-		d = links[linkss - 2];
+		d = links[links_s - 2];
 	else if(x == 3)
-		d = domain[domains - 2];
+		d = domain[domain_s - 2];
 	else if(x == 4)
-		d = filename[filenames - 2];
+		d = filename[filename_s - 2];
 	else if(x == 5)
-		d = regex[regexs - 2];
+		d = regex[regex_s - 2];
 
 	return d;
 }
@@ -162,19 +164,19 @@ readconfig(char *file)
 
 		h[pos] = L'\0';
 		if(wcscmp(h, L"ext") == 0) {
-			fext = adddata(fext, t, &fexts);
+			fext = adddata(fext, t, &fext_s);
 			addflag = 1;
 		} else if(wcscmp(h, L"url") == 0) {
-			links = adddata(links, t, &linkss);
+			links = adddata(links, t, &links_s);
 			addflag = 2;
 		} else if(wcscmp(h, L"domain") == 0) {
-			domain = adddata(domain, t, &domains);
+			domain = adddata(domain, t, &domain_s);
 			addflag = 3;
 		} else if(wcscmp(h, L"filename") == 0) {
-			filename = adddata(filename, t, &filenames);
+			filename = adddata(filename, t, &filename_s);
 			addflag = 4;
 		} else if(wcscmp(h, L"regex") == 0) {
-			regex = adddata(regex, t, &regexs);
+			regex = adddata(regex, t, &regex_s);
 			addflag = 5;
 		} else if(wcscmp(h, L"filemanager") == 0) {
 			filemanager = setcomm(t);
@@ -229,6 +231,21 @@ readconfig(char *file)
 				d->exec = wcscpy(tmp, t);
 				d->exec[wcslen(d->exec) - 1] = L'\0';
 			}
+		} else if(wcscmp(h, L"include") == 0) {
+			char *cf = malloc((wcslen(t) + 1) * sizeof(char));
+			if(cf == NULL) {
+				fclose(fd);
+				free(line);
+				free(h);
+				free(t);
+				return -1;
+			}
+
+			wcstombs(cf, t, wcslen(t));
+			cf[strlen(cf) - 1] = '\0';
+			readconfig(cf);
+			free(cf);
+			addflag = 0;
 		} else {
 			wprintf(L"unknown parameter: %ls\n", h);
 			struct data *d = selector(addflag);
@@ -387,7 +404,7 @@ evaluate(wchar_t *arg)
 		linenum[1] = L'\0';
 	}
 
-	for(i = 0; i < regexs; ++i) {
+	for(i = 0; i < regex_s; ++i) {
 		struct data *d = regex[i];
 		if(d == NULL)
 			break;
@@ -494,7 +511,7 @@ evaluate(wchar_t *arg)
 
 	if(!(wcsncmp(arg, L"http", 4))
 	|| !(wcsncmp(arg, L"https", 5))) {
-		for(i = 0; i < linkss; ++i) {
+		for(i = 0; i < links_s; ++i) {
 			struct data *d = links[i];
 			if(d == NULL)
 				break;
@@ -505,7 +522,7 @@ evaluate(wchar_t *arg)
 			}
 		}
 
-		for(i = 0; i < domains; ++i) {
+		for(i = 0; i < domain_s; ++i) {
 			struct data *d = domain[i];
 			if(d == NULL)
 				break;
@@ -547,7 +564,7 @@ evaluate(wchar_t *arg)
 	if((arg[0] == L'/')
 	|| (arg[0] == L'.' && arg[1] == L'/')
 	|| (arg[0] == L'.' && arg[1] == L'.' && arg[2] == L'/')) {
-		for(i = 0; i < filenames; ++i) {
+		for(i = 0; i < filename_s; ++i) {
 			struct data *d = filename[i];
 			if(d == NULL)
 				break;
@@ -579,7 +596,7 @@ evaluate(wchar_t *arg)
 			goto evaluation;
 		}
 
-		for(i = 0; i < fexts; ++i) {
+		for(i = 0; i < fext_s; ++i) {
 			struct data *d = fext[i];
 			if(d == NULL)
 				break;
@@ -679,7 +696,7 @@ freedata(struct data **a, int size)
 	for(i = 0; i < size - 1; ++i) {
 		struct data *d = a[i];
 		free(d->desc);
-		free(d->exec);
+	free(d->exec);
 		free(d);
 	}
 }
@@ -688,10 +705,35 @@ int
 main(int argc, char **argv)
 {
 	setlocale(LC_ALL, getenv("LANG"));
+	char *cname = NULL;
+	char *tempname = NULL;
 	int i;
+	for(i = 0; i < argc; ++i) {
+		if(strcmp(argv[i], "-h") == 0) {
+			wprintf(L"joker: automatic application launcher "
+				"inspired by Plan9 Plumber\n");
+			wprintf(L"Usage:\n");
+			wprintf(L"-c=file: config file\n");
+			wprintf(L"-h: help, this\n");
+			return 0;
+		}
+
+		if(strncmp(argv[i], "-c", 2) == 0) {
+			char *copy = malloc((strlen(argv[i]) + 1)
+				* sizeof(char));
+			if(copy == NULL)
+				return -1;
+
+			tempname = copy;
+			strcpy(copy, argv[i]);
+			strsep(&copy, "=");
+			cname = copy;
+		}
+	}
+
 	int r = 0;
-	int sizel = 1;
-	wchar_t **argl = calloc(sizel, sizeof(wchar_t*));
+	int size_l = 1;
+	wchar_t **argl = calloc(size_l, sizeof(wchar_t*));
 	if(argl == NULL)
 		return -1;
 
@@ -728,8 +770,8 @@ main(int argc, char **argv)
 			arg[size - 2] = L'\0';
 		} while((c = fgetwc(stdin)) != L'\n');
 
-		argl[sizel - 1] = arg;
-		void *ret = realloc(argl, (sizel + 1)
+		argl[size_l - 1] = arg;
+		void *ret = realloc(argl, (size_l + 1)
 			* sizeof(wchar_t*));
 		if(ret == NULL) {
 			free(arg);
@@ -737,16 +779,17 @@ main(int argc, char **argv)
 			goto freeargl;
 		}
 
-		sizel++;
+		size_l++;
 		argl = ret;
 	}
 
-	if(sizel > 1) {
+	if(size_l > 1) {
 		pid_t pid = 0;
-		filemanager = NULL;
-		stdaction = NULL;
-		browser = NULL;
-		manpage = NULL;
+		wchar_t **progs[PROGS_S] = {&filemanager, &stdaction, &browser
+			,&manpage};
+		for(i = 0; i < PROGS_S; ++i)
+			*progs[i] = NULL;
+
 		idir = NULL;
 		char *home = getenv("HOME");
 		if(home == NULL) {
@@ -754,31 +797,40 @@ main(int argc, char **argv)
 			goto freeargl;
 		}
 
-		char *cname = ".joker";
-		int size = strlen(home)
-			+ strlen(cname)
-			+ 2;
-		char *path = malloc(size * sizeof(char));
-		if(path == NULL) {
-			r = -1;
-			goto freeargl;
+		char *path = NULL;
+		if(cname == NULL) {
+			cname = ".joker";
+
+			int size = strlen(home)
+				+ strlen(cname)
+				+ 2;
+			path = malloc(size * sizeof(char));
+			if(path == NULL) {
+				r = -1;
+				goto freeargl;
+			}
+
+			snprintf(path, size, "%s/%s", home, cname);
+		} else {
+			path = malloc((strlen(cname) + 1) * sizeof(char));
+			if(path == NULL) {
+				r = -1;
+				goto freeargl;
+			}
+
+			strcpy(path, cname);
 		}
 
-		snprintf(path, size, "%s/%s", home, cname);
-		fexts = 1;
-		linkss = 1;
-		domains = 1;
-		filenames = 1;
-		regexs = 1;
-		fext = calloc(fexts, sizeof(struct data*));
-		links = calloc(linkss, sizeof(struct data*));
-		domain = calloc(domains, sizeof(struct data*));
-		regex = calloc(regexs, sizeof(struct data*));
-		filename = calloc(filenames, sizeof(struct data*));
-		if(fext == NULL || links == NULL || domain == NULL
-		|| filename == NULL || regex == NULL) {
-			r = -1;
-			goto freelists;
+		fext_s = links_s = domain_s = filename_s = regex_s = 1;
+		struct data ***dlist[DLIST_S] = {&fext, &links, &domain, &regex
+			,&filename};
+		for(i = 0; i < DLIST_S; ++i) {
+			*dlist[i] = NULL;
+			*dlist[i] = calloc(1, sizeof(struct data*));
+			if(*dlist[i] == NULL) {
+				r = -1;
+				goto freelists;
+			}
 		}
 
 		dsize = 1;
@@ -798,7 +850,7 @@ main(int argc, char **argv)
 		idir[0] = wcscpy(tmp, D_INCLUDE_DIR);
 		int rc = readconfig(path);
 		if(rc == 0) {
-			for(i = 0; i < sizel; ++i) {
+			for(i = 0; i < size_l; ++i) {
 				pid = fork();
 				if(pid == 0) {
 					evaluate(argl[i]);
@@ -817,24 +869,21 @@ freelists:
 		}
 
 		free(path);
-		freedata(fext, fexts);
-		freedata(links, linkss);
-		freedata(domain, domains);
-		freedata(filename, filenames);
-		freedata(regex, regexs);
-		free(fext);
-		free(domain);
-		free(links);
-		free(regex);
-		free(filename);
-		free(filemanager);
-		free(stdaction);
-		free(browser);
-		free(manpage);
+		free(tempname);
+		freedata(fext, fext_s);
+		freedata(links, links_s);
+		freedata(domain, domain_s);
+		freedata(filename, filename_s);
+		freedata(regex, regex_s);
+		for(i = 0; i < DLIST_S; ++i)
+			free(*dlist[i]);
+
+		for(i = 0; i < PROGS_S; ++i)
+			free(*progs[i]);
 	}
 
 freeargl:
-	for(i = 0; i < sizel; ++i)
+	for(i = 0; i < size_l; ++i)
 		free(argl[i]);
 
 	free(argl);

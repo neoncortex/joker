@@ -1,17 +1,11 @@
-# filemanager
-filemanager=thunar %arg
-
-# default action
-stdaction=xterm -e nvim +%num %arg
-
-# web browser
-browser=links2 -g %arg
-
-# manpages
-manpage=xterm -e "man %sec %arg | less +%numG"
+# applications
+filemanager=rox %arg
+stdaction=uxterm -e "nvim +%num %arg"
+browser=linksc -g %arg
+manpage=uxterm -e "man %sec %arg | nvim -R - +%num"
 
 
-# C header directories (for arm, gcc 8)
+# header directories
 idir=/usr/include/arm-linux-gnueabihf/
 idir=/usr/lib/gcc/arm-linux-gnueabihf/8/include/
 idir=/usr/lib/gcc/arm-linux-gnueabihf/8/include-fixed/
@@ -33,7 +27,7 @@ command=vlc --start-time %num file://%arg > /dev/null
 
 # extensions
 ext=epub
-command=xterm -e mupdf %arg
+command=uxterm -e mupdf %arg
 
 ext=kdbx
 command=keepassx %arg
@@ -42,4 +36,19 @@ command=keepassx %arg
 # domain
 domain=www.youtube.com
 command=xterm -e youtube-dl -f 18 -o '/home/pi/Vídeos/%(title)s.%(ext)s' %arg
+
+domain=youtu.be
+command=xterm -e youtube-dl -f 18 -o '/home/pi/Vídeos/%(title)s.%(ext)s' %arg
+
+domain=bitchute.com
+command=xterm -e youtube-dl -o '/home/pi/Vídeos/%(title)s.%(ext)s' %arg
+
+
+# file
+file=/etc/fstab
+command=gvim %arg
+
+
+# external
+#include=/home/user/.another-joker-config-file
 
