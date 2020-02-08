@@ -18,7 +18,7 @@ struct data {
 
 struct data **fext, **links, **domain, **filename, **regex;
 int fext_s, links_s, domain_s, filename_s, regex_s, dsize;
-wchar_t *filemanager, *stdaction, *browser, *manpage, *arg;
+wchar_t *filemanager, *stdaction, *browser, *manpage;
 wchar_t **idir;
 
 struct data**
@@ -696,7 +696,7 @@ freedata(struct data **a, int size)
 	for(i = 0; i < size - 1; ++i) {
 		struct data *d = a[i];
 		free(d->desc);
-	free(d->exec);
+		free(d->exec);
 		free(d);
 	}
 }
@@ -706,81 +706,111 @@ main(int argc, char **argv)
 {
 	setlocale(LC_ALL, getenv("LANG"));
 	char *cname = NULL;
-	char *tempname = NULL;
-	int i;
-	for(i = 0; i < argc; ++i) {
-		if(strcmp(argv[i], "-h") == 0) {
-			wprintf(L"joker: automatic application launcher "
-				"inspired by Plan9 Plumber\n");
-			wprintf(L"Usage:\n");
-			wprintf(L"-c=file: config file\n");
-			wprintf(L"-h: help, this\n");
-			return 0;
-		}
-
-		if(strncmp(argv[i], "-c", 2) == 0) {
-			char *copy = malloc((strlen(argv[i]) + 1)
-				* sizeof(char));
-			if(copy == NULL)
-				return -1;
-
-			tempname = copy;
-			strcpy(copy, argv[i]);
-			strsep(&copy, "=");
-			cname = copy;
-		}
-	}
-
-	int r = 0;
 	int size_l = 1;
 	wchar_t **argl = calloc(size_l, sizeof(wchar_t*));
 	if(argl == NULL)
 		return -1;
 
-	wchar_t c;
-	while((c = fgetwc(stdin)) != WEOF) {
-		int size = 2;
-		arg = malloc(size * sizeof(wchar_t));
-		if(arg == NULL) {
-			r = -1;
-			goto freeargl;
-		}
+	int r = 0;
+	int i;
+	for(i = 1; i < argc; ++i) {
+		if(strcmp(argv[i], "-h") == 0) {
+			wprintf(L"joker: automatic application launcher "
+				"inspired by Plan9 Plumber\n");
+			wprintf(L"Usage: echo \"something\" | joker OPTIONS\n");
+			wprintf(L"       joker OPTIONS file1 file2 fileN\n\n");
+			wprintf(L"OPTIONS\n");
+			wprintf(L"-c=file: config file\n");
+			wprintf(L"-h: help: this\n");
+			return 0;
+		} else if(strncmp(argv[i], "-c", 2) == 0) {
+			char *copy = malloc((strlen(argv[i]) + 1)
+				* sizeof(char));
+			if(copy == NULL) {
+				r = -1;
+				goto freeargl;
+			}
 
-		if(c == L'\n') {
-			free(arg);
-			continue;
-		}
+			char *tempname = copy;
+			strcpy(copy, argv[i]);
+			strsep(&copy, "=");
+			cname = malloc((strlen(copy) + 1)
+				* sizeof(char));
+			if(cname == NULL) {
+				r = -1;
+				goto freeargl;
+			}
 
-		do {
-			if((size == 2 && c == L' ')
-			|| (size == 2 && c == L'\t'))
+			cname = strcpy(cname, copy);
+			free(tempname);
+		} else {
+			wchar_t *t = malloc((strlen(argv[i]) + 1)
+					* sizeof(wchar_t));
+			if(t == NULL) {
+				r = -1;
+				goto freeargl;
+			}
+
+			mbstowcs(t, argv[i], strlen(argv[i]));
+			argl[size_l - 1] = t;
+			void *ret = realloc(argl, (size_l + 1)
+				* sizeof(wchar_t*));
+			if(ret == NULL) {
+				r = -1;
+				goto freeargl;
+			}
+
+			size_l++;
+			argl = ret;
+		}
+	}
+
+	if(size_l == 1) {
+		wchar_t c;
+		while((c = fgetwc(stdin)) != WEOF) {
+			int size = 2;
+			wchar_t *arg = malloc(size * sizeof(wchar_t));
+			if(arg == NULL) {
+				r = -1;
+				goto freeargl;
+			}
+
+			if(c == L'\n') {
+				free(arg);
 				continue;
+			}
 
-			arg[size - 2] = c;
-			void *ret = realloc(arg, (size + 1)
-				* sizeof(wchar_t));
+			do {
+				if((size == 2 && c == L' ')
+				|| (size == 2 && c == L'\t'))
+					continue;
+
+				arg[size - 2] = c;
+				void *ret = realloc(arg, (size + 1)
+					* sizeof(wchar_t));
+				if(ret == NULL) {
+					free(arg);
+					r = -1;
+					goto freeargl;
+				}
+
+				size++;
+				arg = ret;
+				arg[size - 2] = L'\0';
+			} while((c = fgetwc(stdin)) != L'\n');
+
+			argl[size_l - 1] = arg;
+			void *ret = realloc(argl, (size_l + 1)
+				* sizeof(wchar_t*));
 			if(ret == NULL) {
 				free(arg);
 				r = -1;
 				goto freeargl;
 			}
 
-			size++;
-			arg = ret;
-			arg[size - 2] = L'\0';
-		} while((c = fgetwc(stdin)) != L'\n');
-
-		argl[size_l - 1] = arg;
-		void *ret = realloc(argl, (size_l + 1)
-			* sizeof(wchar_t*));
-		if(ret == NULL) {
-			free(arg);
-			r = -1;
-			goto freeargl;
+			size_l++;
+			argl = ret;
 		}
-
-		size_l++;
-		argl = ret;
 	}
 
 	if(size_l > 1) {
@@ -869,7 +899,6 @@ freelists:
 		}
 
 		free(path);
-		free(tempname);
 		freedata(fext, fext_s);
 		freedata(links, links_s);
 		freedata(domain, domain_s);

@@ -56,6 +56,7 @@ will be executed, and so on.
 
 
 Requirements and limitations:
+* It's written for a graphical environinment, with nvim setted with 'set noswapfile'.
 * When passing a url as input, it needs to end in / for the domain matching.
 * %num, %sec and %arg can't be used as part of commands since they are used as placeholders.
 * The : character can't be used in filenames, since it's used as a placeholder for line/pattern.
