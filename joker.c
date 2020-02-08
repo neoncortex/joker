@@ -8,6 +8,7 @@
 #include <regex.h>
 
 #define D_INCLUDE_DIR L"/usr/include/"
+#define D_CONFIG_FILE ".joker"
 #define PROGS_S 4
 #define DLIST_S 5
 
@@ -829,8 +830,7 @@ main(int argc, char **argv)
 
 		char *path = NULL;
 		if(cname == NULL) {
-			cname = ".joker";
-
+			cname = D_CONFIG_FILE;
 			int size = strlen(home)
 				+ strlen(cname)
 				+ 2;
@@ -849,6 +849,7 @@ main(int argc, char **argv)
 			}
 
 			strcpy(path, cname);
+			free(cname);
 		}
 
 		fext_s = links_s = domain_s = filename_s = regex_s = 1;
