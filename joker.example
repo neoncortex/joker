@@ -1,8 +1,8 @@
 # applications
 filemanager=rox %arg
-stdaction=uxterm -e "nvim +%num %arg"
+stdaction=uxterm +sb -e "nvim +%num %arg"
 browser=links2 -g %arg
-manpage=uxterm -e "man %sec %arg | nvim -R - +%num"
+manpage=uxterm +sb -e "man %sec %arg | nvim -R - +%num"
 
 
 # header directories
@@ -22,7 +22,7 @@ regex=.+\.(mp3|wav)
 command=audacious %arg
 
 regex=.+\.(webm|mp4)
-command=vlc --start-time %num file://%arg > /dev/null
+command=vlc --start-time %num --started-from-file '%arg' > /dev/null
 
 
 # extensions
@@ -35,20 +35,31 @@ command=keepassx %arg
 
 # domain
 domain=www.youtube.com
-command=xterm -e youtube-dl -f 18 -o '/home/pi/Vídeos/%(title)s.%(ext)s' %arg
+command=xterm -e youtube-dl %arg
 
 domain=youtu.be
-command=xterm -e youtube-dl -f 18 -o '/home/pi/Vídeos/%(title)s.%(ext)s' %arg
-
-domain=bitchute.com
-command=xterm -e youtube-dl -o '/home/pi/Vídeos/%(title)s.%(ext)s' %arg
+command=xterm -e youtube-dl %arg
 
 
-# file
-file=/etc/fstab
-command=gvim %arg
+# web search
+searchengine=wikipedia
+command=links2 -g https://en.wikipedia.org/w/index.php?search=%arg
+
+searchengine=bing
+command=links2 -g http://www.bing.com/search?q=%arg
+
+searchengine=bingimage
+command=links2 -g http://www.bing.com/images/search?q=+%arg\&FORM=HDRSC2
+
+searchengine=youtube
+command=links2 -g https://www.youtube.com/results?search_query=%arg
+
+
+# files
+filename=/etc/fstab
+command=vi %arg
 
 
 # external
-#include=/home/user/.another-joker-config-file
+include=/path/to/config_file
 
