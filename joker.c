@@ -400,12 +400,12 @@ evaluate(wchar_t *arg)
 			break;
 
 		int ret;
-		char *pattern = malloc((wcslen(d->desc) + 1)
-			* sizeof(char));
+		char *pattern = calloc(wcslen(d->desc) + 2
+			,sizeof(char));
 		if(pattern == NULL)
 			break;
 
-		if((wcstombs(pattern, d->desc, wcslen(d->desc))) <= 0) {
+		if((wcstombs(pattern, d->desc, wcslen(d->desc) + 1)) <= 0) {
 			free(pattern);
 			continue;
 		}
@@ -419,13 +419,13 @@ evaluate(wchar_t *arg)
 			continue;
 		}
 
-		char *carg = malloc((wcslen(arg) + 1) * sizeof(char));
+		char *carg = calloc(wcslen(arg) + 2, sizeof(char));
 		if(carg == NULL) {
 			regfree(&reg);
 			break;
 		}
 
-		if((wcstombs(carg, arg, wcslen(arg))) <= 0) {
+		if((wcstombs(carg, arg, wcslen(arg) + 1)) <= 0) {
 			regfree(&reg);
 			free(carg);
 			break;
