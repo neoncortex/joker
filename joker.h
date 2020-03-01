@@ -14,6 +14,6 @@
 
 #define D_INCLUDE_DIR L"/usr/include/"
 #define D_CONFIG_FILE ".joker"
-
+#define D_HIST_FILE ".joker_history"
 #endif
 

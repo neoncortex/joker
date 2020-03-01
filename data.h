@@ -10,12 +10,12 @@ struct data {
 } data;
 
 struct container {
-	int size;
+	unsigned int size;
 	struct data **d;
 } container;
 
 struct wlist {
-	int size;
+	unsigned int size;
 	wchar_t **list;
 } wlist;
 

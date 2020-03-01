@@ -1,5 +1,5 @@
 CC=gcc
-CCARGS=-Wall
+CCARGS=-Wall -Wextra -ggdb
 PROGNAME=joker
 IPATH=/usr/local/bin
 

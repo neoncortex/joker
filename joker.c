@@ -1,7 +1,7 @@
 #include "joker.h"
 
 struct container *fext, *links, *domain, *filename, *regex, *wsearch;
-wchar_t *filemanager, *stdaction, *browser, *manpage;
+wchar_t *filemanager, *stdaction, *browser, *manpage, *history;
 struct wlist *idir, *argl;
 
 wchar_t*
@@ -189,16 +189,34 @@ readconfig(char *file)
 				addflag = 6;
 			}
 		} else if(wcscmp(h, L"filemanager") == 0) {
+			if(filemanager != NULL)
+				free(filemanager);
+
 			filemanager = wscopy(t);
 			addflag = 0;
 		} else if(wcscmp(h, L"stdaction") == 0) {
+			if(stdaction != NULL)
+				free(stdaction);
+
 			stdaction = wscopy(t);
 			addflag = 0;
 		} else if(wcscmp(h, L"browser") == 0) {
+			if(browser != NULL)
+				free(browser);
+
 			browser = wscopy(t);
 			addflag = 0;
 		} else if(wcscmp(h, L"manpage") == 0) {
+			if(manpage != NULL)
+				free(manpage);
+
 			manpage = wscopy(t);
+			addflag = 0;
+		} else if(wcscmp(h, L"history") == 0) {
+			if(history != NULL)
+				free(history);
+
+			history = wscopy(t);
 			addflag = 0;
 		} else if(wcscmp(h, L"idir") == 0) {
 			if((wlistinsert(idir, (wscopy(t)))) != 0)
@@ -286,7 +304,7 @@ replace(wchar_t *str, wchar_t *placeholder, wchar_t *data
 	|| format == NULL)
 		return NULL;
 
-	int i, j, k, size;
+	int i, j, k, size = 0;
 	int csize = wcslen(str);
 	wchar_t *head = NULL, *tail = NULL;
 	for(i = 0; i < csize; ++i) {
@@ -344,14 +362,19 @@ replace(wchar_t *str, wchar_t *placeholder, wchar_t *data
 }
 
 void
-evaluate(wchar_t *arg)
+evaluate(wchar_t *arg, FILE *hist)
 {
 	if(arg == NULL)
 		return;
 
-	int i, j, k, csize, freearg;
+	if(hist != NULL) {
+		fwrite(arg, wcslen(arg) * sizeof(wchar_t), 1, hist); 
+		fwrite("\n", sizeof(char), 1, hist); 
+	}
+
+	unsigned int i, j, k, csize, freearg;
 	i = j = k = csize = freearg = 0;
-	int asize = wcslen(arg);
+	unsigned int asize = wcslen(arg);
 	wchar_t *linenum = NULL;
 	wchar_t *command = NULL;
 	wchar_t *cmd = NULL;
@@ -527,7 +550,7 @@ evaluate(wchar_t *arg)
 			if(d == NULL)
 				break;
 
-			int begin, end;
+			unsigned int begin, end;
 			begin = 7;
 			if(arg[begin] == L'/')
 				begin++;
@@ -800,38 +823,74 @@ dataread(FILE *fp)
 	return 0;
 }
 
-static char*
-stringsep(char *str, char *delim)
+char*
+stringsep(char *str, char delim)
 {
-	if(str == NULL || delim == NULL)
-		return NULL;
-
-	char *copy = malloc((strlen(str) + 1)
-		* sizeof(char));
-	if(copy == NULL)
-		return NULL;
-
-	strcpy(copy, str);
-	char *temp = copy;
-	strsep(&copy, delim);
-	if(copy == NULL) {
-		free(temp);
-		return NULL;
+	unsigned int i, j;
+	unsigned int size = strlen(str);
+	for(i = 0; i < size; ++i) {
+		if(str[i] == delim) {
+			++i;
+			break;
+		}
 	}
 
-	char *tail = malloc((strlen(copy) + 1)
-		* sizeof(char));
-	if(tail == NULL) {
-		free(temp);
+	if(i == size)
 		return NULL;
-	}
 
-	char *ret = strcpy(tail, copy);
-	free(temp);
+	char *ret = calloc(size, sizeof(char));
 	if(ret == NULL)
-		free(tail);
+		return NULL;
 
+	for(j = 0; j < size - 1; ++j) {
+		ret[j] = str[i];
+		++i;
+	}
+
+	ret[j] = '\0';
 	return ret;
+}
+
+char*
+pathsolve(char *directory, char *home, char *def)
+{
+	if(home == NULL || def == NULL)
+		return NULL;
+
+	char *path = NULL;
+	if(directory == NULL) {
+		int size = strlen(home)
+			+ strlen(def)
+			+ 2;
+		path = calloc(size, sizeof(char));
+		if(path == NULL)
+			return NULL;
+
+		snprintf(path, size, "%s/%s", home, def);
+	} else {
+		path = calloc((strlen(directory) + 1), sizeof(char));
+		if(path == NULL)
+			return NULL;
+
+		strcpy(path, directory);
+	}
+
+	return path;
+}
+
+void
+help()
+{
+	wprintf(L"joker: automatic application launcher inspired by Plan9"
+		" Plumber\n");
+	wprintf(L"Usage: piped command | joker OPTIONS\n");
+	wprintf(L"       joker OPTIONS str1 str2 strn\n\n");
+	wprintf(L"OPTIONS\n");
+	wprintf(L"-c=file: config file\n");
+	wprintf(L"-f=file: use file content as input\n");
+	wprintf(L"-i=file: history file\n");
+	wprintf(L"-n: do not write the pattern in history file\n");
+	wprintf(L"-h: help: this\n");
 }
 
 int
@@ -839,26 +898,25 @@ main(int argc, char **argv)
 {
 	setlocale(LC_ALL, getenv("LANG"));
 	char *cname = NULL;
+	char *hname = NULL;
 	argl = wlistnew();
 	if(argl == NULL)
 		return -1;
 
+	unsigned int reg = 1;
 	int i, r = -1;
 	for(i = 1; i < argc; ++i) {
 		if(strcmp(argv[i], "-h") == 0) {
-			wprintf(L"joker: automatic application launcher "
-				"inspired by Plan9 Plumber\n");
-			wprintf(L"Usage: piped command | joker OPTIONS\n");
-			wprintf(L"       joker OPTIONS str1 str2 strn\n\n");
-			wprintf(L"OPTIONS\n");
-			wprintf(L"-c=file: config file\n");
-			wprintf(L"-f=file: use file content as input\n");
-			wprintf(L"-h: help: this\n");
+			help();
 			return 0;
 		} else if(strncmp(argv[i], "-c", 2) == 0) {
-			cname = stringsep(argv[i], "=");
+			cname = stringsep(argv[i], '=');
+		} else if(strncmp(argv[i], "-i", 2) == 0) {
+			hname = stringsep(argv[i], '=');
+		} else if(strcmp(argv[i], "-n") == 0) {
+			reg = 0;
 		} else if(strncmp(argv[i], "-f", 2) == 0) {
-			char *fn = stringsep(argv[i], "=");
+			char *fn = stringsep(argv[i], '=');
 			if(fn != NULL) {
 				FILE *f = fopen(fn, "r");
 				if(f == NULL) {
@@ -879,14 +937,13 @@ main(int argc, char **argv)
 			if(t == NULL)
 				goto clear;
 
-			int res = mbstowcs(t, argv[i], strlen(argv[i]));
-			if(res > 0) {
-				if((wlistinsert(argl, t)) != 0)
-					wprintf(L"problem wlistinsert\n");
-			} else {
+			if((mbstowcs(t, argv[i], strlen(argv[i]))) <= 0) {
 				free(t);
 				goto clear;
 			}
+
+			if((wlistinsert(argl, t)) != 0)
+				wprintf(L"problem wlistinsert\n");
 		}
 	}
 
@@ -896,13 +953,13 @@ main(int argc, char **argv)
 	}
 
 	if(argl->size > 1) {
-		pid_t pid = 0;
 		char *home = NULL;
-		char *path = NULL;
+		char *cpath = NULL;
 		filemanager = NULL;
 		stdaction = NULL;
 		browser = NULL;
 		manpage = NULL;
+		history = NULL;
 		fext = containernew();
 		links = containernew();
 		domain = containernew();
@@ -922,33 +979,68 @@ main(int argc, char **argv)
 		if(home == NULL)
 			goto clear;
 
-		if(cname == NULL) {
-			int csize = strlen(home)
-				+ strlen(D_CONFIG_FILE)
-				+ 2;
-			path = calloc(csize, sizeof(char));
-			if(path == NULL)
-				goto clear;
+		cpath = pathsolve(cname, home, D_CONFIG_FILE);
+		if(cpath == NULL)
+			goto clear;
 
-			snprintf(path, csize, "%s/%s", home, D_CONFIG_FILE);
-		} else {
-			path = calloc((strlen(cname) + 1), sizeof(char));
-			if(path == NULL)
-				goto clear;
+		if((readconfig(cpath)) == 0) {
+			char *histp = NULL;
+			if(hname != NULL) {
+				if(history != NULL)
+					free(history);
 
-			strcpy(path, cname);
-			free(cname);
-		}
+				histp = pathsolve(hname, home, D_HIST_FILE);
+				if(histp == NULL)
+					goto clear;
+				history = malloc((strlen(histp) + 1)
+					* sizeof(wchar_t));
+				if(history == NULL) {
+					free(histp);
+					goto clear;
+				}
 
-		if((readconfig(path)) == 0) {
+				int res = mbstowcs(history, histp
+					,strlen(histp));
+				if(res <= 0) {
+					free(histp);
+					goto clear;
+				}
+			} else if(history != NULL) {
+				histp = malloc((wcslen(history) + 1)
+					* sizeof(char));
+				if(histp == NULL)
+					goto clear;
+
+				int res = wcstombs(histp, history
+					,wcslen(history));
+				if(res <= 0) {
+					free(histp);
+					goto clear;
+				}
+			} else
+				histp = pathsolve(hname, home, D_HIST_FILE);
+
+			FILE *fh = NULL;
+			if(reg == 1) {
+				fh = fopen(histp, "a");
+				if(fh == NULL)
+					perror("Failed to open history:");
+			}
+
+			unsigned int i;
 			for(i = 0; i < argl->size - 1; ++i) {
-				pid = fork();
+				pid_t pid = fork();
 				if(pid == 0) {
-					evaluate(argl->list[i]);
+					evaluate(argl->list[i], fh);
 					break;
 				} else if(pid == -1)
 					perror("Error fork():");
 			}
+
+			if(fh != NULL)
+				fclose(fh);
+
+			free(histp);
 		} else {
 			r = 1;
 			goto clear;
@@ -956,11 +1048,12 @@ main(int argc, char **argv)
 
 		r = 0;
 clear:
-		free(path);
+		free(cpath);
 		free(filemanager);
 		free(stdaction);
 		free(browser);
 		free(manpage);
+		free(history);
 		containerdestroy(fext);
 		containerdestroy(links);
 		containerdestroy(domain);
@@ -968,9 +1061,12 @@ clear:
 		containerdestroy(filename);
 		containerdestroy(wsearch);
 		wlistdestroy(idir);
-		wlistdestroy(argl);
-	}
+	} else
+		help();
 
+	free(cname);
+	free(hname);
+	wlistdestroy(argl);
 	return r;
 }
 
