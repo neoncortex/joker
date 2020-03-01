@@ -368,8 +368,20 @@ evaluate(wchar_t *arg, FILE *hist)
 		return;
 
 	if(hist != NULL) {
-		fwrite(arg, wcslen(arg) * sizeof(wchar_t), 1, hist); 
+		char *t = malloc((wcslen(arg) + 1)
+			* sizeof(char));
+		if(t == NULL)
+			return;
+
+		int res = wcstombs(t, arg, wcslen(arg));
+		if(res <= 0) {
+			free(t);
+			return;
+		}
+
+		fwrite(t, strlen(t) * sizeof(char), 1, hist); 
 		fwrite("\n", sizeof(char), 1, hist); 
+		free(t);
 	}
 
 	unsigned int i, j, k, csize, freearg;
